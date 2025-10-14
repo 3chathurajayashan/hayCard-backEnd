@@ -7,7 +7,7 @@ const sampleSchema = new Schema({
   requestRefNo: { type: String, required: true },
   sampleRefNo: { type: String, required: true },
   to: { type: String, default: "Haycarb Colombo Lab" },
-  from: { type: [String], enum: ["HCM", "HCB"], required: true }, // can be HCM, HCB, or both
+  from: { type: [String], enum: ["HCM", "HCB", "HCM HCB"], required: true }, // can be HCM, HCB, or both
   remarks: { type: String },
 
   sampleInTime: { type: String },
@@ -49,6 +49,10 @@ const sampleSchema = new Schema({
   updatedAt: { type: Date },
   receivedAt: { type: Date },
   openedAt: { type: Date },
+  received: { type: Boolean, default: false },
+receivedDate: { type: String, default: null },
+receivedTime: { type: String, default: null },
+
 });
 
 // 🔹 Pre-save hook for generating QR + sampleId

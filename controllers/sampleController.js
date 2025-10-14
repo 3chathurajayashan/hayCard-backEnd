@@ -119,6 +119,32 @@ exports.updateSample = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+// sampleController.js
+exports.updateReceivedStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { received } = req.body;
+
+    const now = new Date();
+    const receivedDate = now.toLocaleDateString();
+    const receivedTime = now.toLocaleTimeString();
+
+    const sample = await Sample.findByIdAndUpdate(
+      id,
+      {
+        received,
+        receivedDate: received ? receivedDate : null,
+        receivedTime: received ? receivedTime : null,
+      },
+      { new: true }
+    );
+
+    res.status(200).json(sample);
+  } catch (err) {
+    res.status(500).json({ message: "Error updating received status", error: err });
+  }
+};
+
 
 // DELETE sample
 exports.deleteSample = async (req, res) => {
