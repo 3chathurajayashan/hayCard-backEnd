@@ -27,11 +27,14 @@ const sampleSchema = new Schema({
 
   // Test details
   testMethod: { type: String },
-  results: {
-    As_ppb: { type: Number },
-    Sb_ppb: { type: Number },
-    Al_ppb: { type: Number },
+results: [
+  {
+    As_ppb: String,
+    Sb_ppb: String,
+    Al_ppb: String,
   },
+],
+
 
   analysedBy: { type: String },
   completedDate: { type: String },
