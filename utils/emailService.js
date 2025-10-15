@@ -1,36 +1,38 @@
 const nodemailer = require("nodemailer");
-const Notification = require("../models/notificationModel");
 
+// Configure the transporter using your lab system Gmail
 const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: process.env.EMAIL_PORT,
-  secure: false,
+  host: process.env.EMAIL_HOST, // smtp.gmail.com
+  port: process.env.EMAIL_PORT, // 587 or 465
+  secure: false, // true for 465, false for 587
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
+    user: process.env.EMAIL_USER, // your lab system email
+    pass: process.env.EMAIL_PASS,  
+  },
 });
 
-async function sendEmail(to, subject, html) {
-  const mailOptions = {
-    from: process.env.EMAIL_USER,
-    to,
-    subject,
-    html
-  };
-  const info = await transporter.sendMail(mailOptions);
-
-  // log email to DB (best practice)
+/**
+ * Send an email to the lab admin
+ * @param {string} subject - Subject of the email
+ * @param {string} html - HTML content of the email
+ */
+async function sendEmail(subject, html) {
   try {
-    await Notification.create({
-      to,
+    const mailOptions = {
+      from: `"HayCarb Notifications" <${process.env.EMAIL_USER}>`,
+      to: "chathurachamod88@gmail.com", // Lab admin email
       subject,
-      body: html
-    });
+      html,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+
+    console.log(`✅ Email sent to lab admin: chiranga@gmail.com`);
+    return info;
   } catch (err) {
-    console.error("Notification logging error:", err);
+    console.error("❌ Email sending error:", err.message);
+    throw err;
   }
-  return info;
 }
 
 module.exports = { sendEmail };

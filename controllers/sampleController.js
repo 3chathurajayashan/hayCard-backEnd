@@ -48,6 +48,12 @@ exports.createSample = async (req, res) => {
       );
     }
 
+       // Send email to lab admin
+    await sendEmail(
+      "New Sample Added",
+      `<p>Hello chiranga! A new sample has been added to the system.Check your dashboard. Sample Ref: ${sample.sampleRefNo}</p>`
+    );
+
     // Return populated sample for front-end
     const populatedSample = await Sample.findById(sample._id).populate("createdBy");
     res.status(201).json(populatedSample);
@@ -105,11 +111,11 @@ exports.updateSample = async (req, res) => {
     if (req.user._id.toString() !== sample.createdBy.toString()) {
       const creator = await User.findById(sample.createdBy);
       if (creator) {
-        await sendEmail(
-          creator.email,
-          "Sample Updated",
-          `<p>Your sample <strong>${sample.sampleId}</strong> has been updated by ${req.user.name}.</p>`
-        );
+         // Send email to lab admin
+    await sendEmail(
+      "Added Results for Sample",
+      `<p>Hello chiranga! you have added results to ,Sample Ref: ${sample.sampleRefNo}</p>`
+    );
       }
     }
 
@@ -137,6 +143,10 @@ exports.updateReceivedStatus = async (req, res) => {
         receivedTime: received ? receivedTime : null,
       },
       { new: true }
+    );
+      await sendEmail(
+      "Sample Recieved!",
+      `<p>Hello chiranga!The sample has been recieved succussfully!Sample Ref: ${sample.sampleRefNo}</p>`
     );
 
     res.status(200).json(sample);
