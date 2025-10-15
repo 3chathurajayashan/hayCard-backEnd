@@ -155,6 +155,17 @@ exports.updateReceivedStatus = async (req, res) => {
   }
 };
 
+ 
+exports.getSampleByIdPublic = async (req, res) => {
+  try {
+    const sample = await Sample.findById(req.params.id);
+    if (!sample) return res.status(404).json({ message: "Sample not found" });
+    res.json(sample);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
 
 // DELETE sample
 exports.deleteSample = async (req, res) => {
