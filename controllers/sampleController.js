@@ -1,6 +1,7 @@
 const Sample = require("../models/sampleModel");
 const User = require("../models/userModel");
 const { sendEmail } = require("../utils/emailService");
+const moment = require("moment-timezone");
 
 // CREATE new sample
 exports.createSample = async (req, res) => {
@@ -126,14 +127,16 @@ exports.updateSample = async (req, res) => {
   }
 };
 // sampleController.js
+ 
 exports.updateReceivedStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { received } = req.body;
 
-    const now = new Date();
-    const receivedDate = now.toLocaleDateString();
-    const receivedTime = now.toLocaleTimeString();
+    // 🕒 Get Sri Lankan local time (GMT+5:30)
+    const now = moment().tz("Asia/Colombo");
+    const receivedDate = now.format("YYYY-MM-DD");
+    const receivedTime = now.format("hh:mm:ss A");
 
     const sample = await Sample.findByIdAndUpdate(
       id,
@@ -144,16 +147,24 @@ exports.updateReceivedStatus = async (req, res) => {
       },
       { new: true }
     );
+
+    if (received) {
       await sendEmail(
-      "Sample Recieved!",
-      `<p>Hello chiranga!The sample has been recieved succussfully!Sample Ref: ${sample.sampleRefNo}</p>`
-    );
+        "Sample Received!",
+        `<p>Hello Chiranga! The sample has been received successfully.<br>
+        <strong>Sample Ref:</strong> ${sample.sampleRefNo}<br>
+        <strong>Date:</strong> ${receivedDate}<br>
+        <strong>Time (Sri Lanka):</strong> ${receivedTime}</p>`
+      );
+    }
 
     res.status(200).json(sample);
   } catch (err) {
+    console.error("Error updating received status:", err);
     res.status(500).json({ message: "Error updating received status", error: err });
   }
 };
+
 
  
 exports.getSampleByIdPublic = async (req, res) => {
