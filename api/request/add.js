@@ -1,39 +1,55 @@
-import dbConnect from "@/lib/dbConnect";
-import Chemical from "./model";
-import { enableCors } from "../cors";  // 👈 import this
+import mongoose from "mongoose";
+import Chemical from "./model.js"; // adjust path if needed
+
+// ✅ Database connect helper
+const connectDB = async () => {
+  if (mongoose.connection.readyState >= 1) return;
+  await mongoose.connect(process.env.MONGODB_URI);
+};
+
+// ✅ Enable CORS globally
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "https://hay-card-front-end.vercel.app",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
 
 export default async function handler(req, res) {
-  enableCors(res); // 👈 add this line first
+  // ✅ Set CORS headers for *every* request
+  Object.entries(corsHeaders).forEach(([key, value]) => {
+    res.setHeader(key, value);
+  });
 
+  // ✅ Handle preflight OPTIONS request
   if (req.method === "OPTIONS") {
-    return res.status(200).end(); // 👈 preflight check fix
+    return res.status(200).end();
   }
 
-  await dbConnect();
+  // ✅ Handle POST request (add chemical)
+  if (req.method === "POST") {
+    try {
+      await connectDB();
 
-  if (req.method !== "POST")
-    return res.status(405).json({ message: "Method not allowed" });
+      const { chemicalName, customChemical, quantity, handOverRange, fixedHandOverDate } = req.body;
 
-  try {
-    let { chemicalName, customChemical, quantity, handOverRange, fixedHandOverDate } = req.body;
+      if (chemicalName === "Other" && !customChemical)
+        return res.status(400).json({ message: "Please provide a custom chemical name." });
 
-    if (chemicalName === "Other" && (!customChemical || !customChemical.trim()))
-      return res.status(400).json({ message: "Please provide a custom chemical name." });
+      const newChemical = await Chemical.create({
+        chemicalName: chemicalName === "Other" ? customChemical : chemicalName,
+        customChemical: chemicalName === "Other" ? customChemical : "",
+        quantity,
+        handOverRange,
+        fixedHandOverDate: handOverRange === "Fixed Date" ? fixedHandOverDate : null,
+      });
 
-    if (handOverRange === "Fixed Date" && !fixedHandOverDate)
-      return res.status(400).json({ message: "Please provide a fixed handover date." });
-
-    const newChemical = await Chemical.create({
-      chemicalName,
-      customChemical,
-      quantity,
-      handOverRange,
-      fixedHandOverDate: handOverRange === "Fixed Date" ? fixedHandOverDate : null,
-    });
-
-    return res.status(201).json({ message: "Chemical added successfully!", chemical: newChemical });
-  } catch (error) {
-    console.error("Error adding chemical:", error);
-    return res.status(500).json({ message: "Error adding chemical", error: error.message });
+      return res.status(201).json({ message: "Chemical added successfully!", chemical: newChemical });
+    } catch (error) {
+      console.error("Error adding chemical:", error);
+      return res.status(500).json({ message: "Error adding chemical", error: error.message });
+    }
   }
+
+  // ✅ If any other method used
+  return res.status(405).json({ message: "Method Not Allowed" });
 }
