@@ -32,6 +32,17 @@ app.use("/api/chemicals", chemRoutes);
 app.use("/cusSamples", cusSampleRoutes);
  
 app.use("/api/samples", customerSampleRoutes);
+app.use(
+  cors({
+    origin: [
+      "https://hay-card-front-end.vercel.app", // your deployed frontend
+      "http://localhost:5173", // for local testing
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  })
+);
 
 const PORT = process.env.PORT || 5000;
 mongoose.connect("mongodb+srv://admin:admin@cluster0.afu07sh.mongodb.net/heyCrabDB?retryWrites=true&w=majority", { useNewUrlParser: true, useUnifiedTopology: true })
