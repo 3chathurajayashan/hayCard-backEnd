@@ -62,12 +62,18 @@ handler.use(upload.single("document"));
 
 // ---- POST Route ----
 handler.post(async (req, res) => {
-  try {
-    await connectToDatabase();
+ try {
+  console.log("Incoming POST request...");
 
-    if (!req.file) {
-      return res.status(400).json({ message: "File is required" });
-    }
+  await connectToDatabase();
+  console.log("✅ MongoDB connected");
+
+  if (!req.file) {
+    console.log("❌ No file found in request!");
+    return res.status(400).json({ message: "No file uploaded" });
+  }
+
+  console.log("📂 File received:", req.file.originalname, req.file.mimetype);
 
     // Upload to Cloudinary
     const uploadResult = await new Promise((resolve, reject) => {
