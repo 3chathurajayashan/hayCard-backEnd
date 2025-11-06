@@ -21,6 +21,8 @@ const storage = new CloudinaryStorage({
   },
 });
 
+const multer = require("multer");
+const { storage } = require("../cloudinary");
 const upload = multer({ storage });
 
 export const config = {
