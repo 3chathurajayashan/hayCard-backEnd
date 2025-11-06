@@ -4,21 +4,16 @@ import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
 import nextConnect from "next-connect";
 
-// ✅ Disable Next.js body parser for file upload
 export const config = {
-  api: {
-    bodyParser: false,
-  },
+  api: { bodyParser: false },
 };
 
-// ✅ Cloudinary Config
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// ✅ Set up Multer (for Excel files only)
 const storage = multer.memoryStorage();
 const upload = multer({
   storage,
@@ -34,7 +29,6 @@ const upload = multer({
   },
 });
 
-// ✅ Create handler with nextConnect
 const handler = nextConnect({
   onError(error, req, res) {
     console.error("API Error:", error);
@@ -45,25 +39,23 @@ const handler = nextConnect({
   },
 });
 
-// ✅ Fix CORS
+// 🧩 CORS fix
+const allowedOrigins = [
+  "https://hay-card-front-end.vercel.app",
+  "http://localhost:5173",
+];
 handler.use((req, res, next) => {
-  res.setHeader(
-    "Access-Control-Allow-Origin",
-    "https://hay-card-front-end.vercel.app"
-  );
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, OPTIONS"
-  );
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
   }
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  if (req.method === "OPTIONS") return res.status(200).end();
   next();
 });
 
-// ✅ Handle File Upload
 handler.use(upload.single("document"));
 
 handler.post(async (req, res) => {
@@ -75,10 +67,13 @@ handler.post(async (req, res) => {
       return res.status(400).json({ message: "No file uploaded" });
     }
 
-    // Upload file to Cloudinary
     const uploadResult = await new Promise((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
-        { resource_type: "raw", folder: "customer_samples" },
+        {
+          resource_type: "raw",
+          folder: "customer_samples",
+          public_id: `${Date.now()}_${req.file.originalname}`,
+        },
         (error, result) => {
           if (error) reject(error);
           else resolve(result);
@@ -87,7 +82,6 @@ handler.post(async (req, res) => {
       stream.end(req.file.buffer);
     });
 
-    // Save MongoDB document
     const newSample = new Sample({
       referenceNumber: req.body.referenceNumber,
       documentPath: uploadResult.secure_url,
