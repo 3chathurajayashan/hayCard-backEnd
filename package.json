@@ -21,6 +21,7 @@
     "mongoose": "^8.19.1",
     "multer": "^2.0.2",
     "multer-storage-cloudinary": "^4.0.0",
+    "next-connect": "^1.0.0",
     "node-cron": "^3.0.2",
     "nodemailer": "^6.9.0",
     "nodemon": "^3.1.10",

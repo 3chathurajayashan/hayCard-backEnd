@@ -32,27 +32,33 @@ const upload = multer({
 const handler = nextConnect({
   onError(error, req, res) {
     console.error("API Error:", error);
+    // Always send CORS headers on error
+    res.setHeader("Access-Control-Allow-Origin", "*");
     res.status(500).json({ message: `Server error: ${error.message}` });
   },
   onNoMatch(req, res) {
+    res.setHeader("Access-Control-Allow-Origin", "*");
     res.status(405).json({ message: `Method ${req.method} not allowed` });
   },
 });
 
-// 🧩 CORS fix
-const allowedOrigins = [
-  "https://hay-card-front-end.vercel.app",
-  "http://localhost:5173",
-];
 handler.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-  }
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  // ✅ Always run this first
+  res.setHeader(
+    "Access-Control-Allow-Origin",
+    "https://hay-card-front-end.vercel.app"
+  );
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, DELETE, OPTIONS"
+  );
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   res.setHeader("Access-Control-Allow-Credentials", "true");
-  if (req.method === "OPTIONS") return res.status(200).end();
+
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
   next();
 });
 
@@ -64,6 +70,7 @@ handler.post(async (req, res) => {
     await connectMongo();
 
     if (!req.file) {
+      res.setHeader("Access-Control-Allow-Origin", "*");
       return res.status(400).json({ message: "No file uploaded" });
     }
 
@@ -89,12 +96,14 @@ handler.post(async (req, res) => {
 
     await newSample.save();
 
+    res.setHeader("Access-Control-Allow-Origin", "*");
     res.status(201).json({
       message: "Sample uploaded successfully!",
       sample: newSample,
     });
   } catch (err) {
     console.error("Upload error:", err);
+    res.setHeader("Access-Control-Allow-Origin", "*");
     res.status(500).json({ message: "Upload failed", error: err.message });
   }
 });
