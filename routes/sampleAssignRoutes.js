@@ -3,26 +3,40 @@ const router = express.Router();
 const multer = require("multer");
 const path = require("path");
 
-// Import the sampleAssign model
-const SampleAssign = require("../models/sampleAssignModel");
-const { addSample, getSamples } = require("../controllers/sampleAssignController");
+const {
+  addSample,
+  getSamples,
+} = require("../controllers/sampleAssignController");
 
-// Setup multer storage
+const SampleAssign = require("../models/sampleAssignModel");
+
+// ✅ Multer setup
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, "uploads/"),
-  filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname)),
+  filename: (req, file, cb) =>
+    cb(null, Date.now() + path.extname(file.originalname)),
 });
 
-const upload = multer({ storage });
+const upload = multer({
+  storage,
+  fileFilter: (req, file, cb) => {
+    const allowed = [
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ];
+    if (!allowed.includes(file.mimetype)) {
+      return cb(new Error("Only Excel files (.xls, .xlsx) are allowed"));
+    }
+    cb(null, true);
+  },
+});
 
-// Routes
+// ✅ Routes
 router.post("/add", upload.single("document"), addSample);
 router.get("/all", getSamples);
 
-// Mark sample as out
 router.patch("/out/:id", async (req, res) => {
   try {
-    console.log("PATCH /out/:id called with id:", req.params.id);
     const sample = await SampleAssign.findByIdAndUpdate(
       req.params.id,
       { isOut: true },
@@ -31,7 +45,7 @@ router.patch("/out/:id", async (req, res) => {
     if (!sample) return res.status(404).json({ message: "Sample not found" });
     res.status(200).json(sample);
   } catch (error) {
-    console.error("Error in PATCH /out/:id:", error);
+    console.error("Error updating sample:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
