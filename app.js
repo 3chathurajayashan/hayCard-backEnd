@@ -5,6 +5,7 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const userRoutes = require("./routes/userRoute");
 const sampleRoutes = require("./routes/sampleRoute");
+const chemRoutes = require("./routes/chemRequestRoute");
 const Sample = require("./models/sampleModel");
 const User = require("./models/userModel");
 const { sendEmail } = require("./utils/emailService");
@@ -16,6 +17,8 @@ app.use(bodyParser.json());
 
 app.use("/users", userRoutes);
 app.use("/samples", sampleRoutes);
+app.use("/api/chemicals", chemRoutes);
+ 
 
 const PORT = process.env.PORT || 5000;
 mongoose.connect("mongodb+srv://admin:admin@cluster0.afu07sh.mongodb.net/heyCrabDB?retryWrites=true&w=majority", { useNewUrlParser: true, useUnifiedTopology: true })
