@@ -1,17 +1,15 @@
-export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "https://hay-card-front-end.vercel.app");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+import { enableCors } from "../utils/cors.js";
 
-  if (req.method === "OPTIONS") return res.status(200).end();
+export default async function handler(req, res) {
+  if (enableCors(req, res)) return;
 
   if (req.method === "POST") {
-    const { chemicalName, quantity, requester } = req.body;
+    const { chemicalName, quantity, handOverRange } = req.body;
 
-    // You can later add DB connection here
+    // (Later: Save to MongoDB)
     return res.status(201).json({
       message: "Chemical request added successfully!",
-      data: { chemicalName, quantity, requester },
+      data: { chemicalName, quantity, handOverRange },
     });
   }
 

@@ -1,16 +1,12 @@
-export default async function handler(req, res) {
-  // ✅ Allow CORS
-  res.setHeader("Access-Control-Allow-Origin", "https://hay-card-front-end.vercel.app");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+import { enableCors } from "../utils/cors.js";
 
-  if (req.method === "OPTIONS") return res.status(200).end();
+export default async function handler(req, res) {
+  if (enableCors(req, res)) return;
 
   if (req.method === "GET") {
-    // Example data (replace with DB fetch)
     return res.status(200).json([
-      { name: "Hydrochloric Acid", qty: 10 },
-      { name: "Sodium Chloride", qty: 15 },
+      { chemicalName: "Hydrochloric Acid", quantity: "25L", handOverRange: "Within 2 Weeks", createdAt: new Date() },
+      { chemicalName: "Sodium Hydroxide", quantity: "15kg", handOverRange: "Within 1 Week", createdAt: new Date() },
     ]);
   }
 
