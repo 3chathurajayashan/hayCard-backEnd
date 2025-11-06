@@ -1,58 +1,94 @@
+
 require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
-const cors = require("cors");
 const bodyParser = require("body-parser");
+const cors = require("cors");
 const fs = require("fs");
+const cron = require("node-cron");
+const { sendEmail } = require("./utils/emailService");
 
-// Import routes
-const userRoutes = require("./routes/userRoute");
-const sampleRoutes = require("./routes/sampleRoute");
-const chemRoutes = require("./routes/chemRequestRoute");
-const cusSampleRoutes = require("./routes/customerSampleRoute");
-const sampleAssignRoutes = require("./routes/sampleAssignRoutes");
-
-const app = express();
-
-// ✅ Ensure uploads folder exists
 const uploadDir = "./uploads";
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir);
   console.log("Uploads folder created!");
 }
 
-// ✅ Apply CORS middleware FIRST before anything else
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "https://hay-card-front-end.vercel.app");
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  res.header("Access-Control-Allow-Credentials", "true");
-  if (req.method === "OPTIONS") return res.sendStatus(200);
-  next();
-});
+const userRoutes = require("./routes/userRoute");
+const sampleRoutes = require("./routes/sampleRoute");
+const chemRoutes = require("./routes/chemRequestRoute");
+const cusSampleRoutes = require("./routes/customerSampleRoute");
+const customerSampleRoutes = require("./routes/sampleAssignRoutes");
+const Sample = require("./models/sampleModel");
 
-// ✅ Middleware
+const app = express();
+
+// ✅ Correct CORS setup
+const allowedOrigins = [
+  "https://hay-card-front-end.vercel.app",
+  "http://localhost:5173",
+  "http://localhost:3000"
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  })
+);
+
 app.use(bodyParser.json());
 app.use("/uploads", express.static("uploads"));
 
-// ✅ Routes
 app.use("/users", userRoutes);
 app.use("/samples", sampleRoutes);
 app.use("/api/chemicals", chemRoutes);
 app.use("/cusSamples", cusSampleRoutes);
-app.use("/api/samples", sampleAssignRoutes);
+app.use("/api/samples", customerSampleRoutes);
 
-// ✅ Simple health check (for Vercel testing)
-app.get("/", (req, res) => {
-  res.send("✅ HayCard backend is live and CORS configured correctly!");
-});
-
-// ✅ Database Connection
-mongoose
-  .connect("mongodb+srv://admin:admin@cluster0.afu07sh.mongodb.net/heyCrabDB?retryWrites=true&w=majority")
-  .then(() => console.log("MongoDB connected ✅"))
-  .catch((err) => console.error("DB connection error:", err));
-
-// ✅ Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT} 🚀`));
+
+mongoose
+  .connect("mongodb+srv://admin:admin@cluster0.afu07sh.mongodb.net/heyCrabDB?retryWrites=true&w=majority", {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => {
+    app.listen(PORT, () => console.log(`Server running on ${PORT}`));
+    console.log("Mongo connected");
+
+    cron.schedule(
+      "0 9 * * *",
+      async () => {
+        try {
+          const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+          const overdue = await Sample.find({
+            createdAt: { $lte: oneDayAgo },
+            status: "Registered",
+          }).populate("createdBy");
+
+          for (const s of overdue) {
+            if (s.createdBy && s.createdBy.email) {
+              await sendEmail(
+                s.createdBy.email,
+                "Sample Not Received",
+                `<p>Your sample ${s.sampleId} is not yet received by lab. Please check.</p>`
+              );
+            }
+          }
+        } catch (err) {
+          console.error("Cron error:", err);
+        }
+      },
+      { timezone: "Asia/Colombo" }
+    );
+  })
+  .catch((err) => console.error(err));
