@@ -10,7 +10,7 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir);
   console.log("Uploads folder created!");
 }
-
+ 
 const userRoutes = require("./routes/userRoute");
 const sampleRoutes = require("./routes/sampleRoute");
 const chemRoutes = require("./routes/chemRequestRoute");
@@ -23,12 +23,13 @@ const customerSampleRoutes = require("./routes/sampleAssignRoutes");
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
+
 app.use("/uploads", express.static("uploads")); // serve uploaded files
 app.use("/users", userRoutes);
 app.use("/samples", sampleRoutes);
 app.use("/api/chemicals", chemRoutes);
  
-app.use("/api/cusSamples", cusSampleRoutes);
+app.use("/cusSamples", cusSampleRoutes);
  
 app.use("/api/samples", customerSampleRoutes);
 
