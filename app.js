@@ -23,12 +23,8 @@ if (!fs.existsSync(uploadDir)) {
 // ✅ Fix CORS issue completely
 app.use(
   cors({
-    origin: [
-      "https://hay-card-front-end.vercel.app",
-      "http://localhost:5173",
-      "http://localhost:3000",
-    ],
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    origin: ["https://hay-card-front-end.vercel.app"], // your frontend domain
+    methods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
