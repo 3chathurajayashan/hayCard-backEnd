@@ -4,21 +4,21 @@ import { v2 as cloudinary } from "cloudinary";
 import multer from "multer";
 import nextConnect from "next-connect";
 
-// ================= CLOUDINARY CONFIG =================
+// ---- Cloudinary Config ----
 cloudinary.config({
   cloud_name: process.env.CLOUD_NAME,
   api_key: process.env.CLOUD_KEY,
   api_secret: process.env.CLOUD_SECRET,
 });
 
-// Disable Next.js body parsing (important for file uploads)
+// ---- Disable bodyParser for uploads ----
 export const config = {
   api: {
     bodyParser: false,
   },
 };
 
-// ================= MULTER STORAGE =================
+// ---- Setup multer ----
 const storage = multer.memoryStorage();
 const upload = multer({
   storage,
@@ -34,39 +34,53 @@ const upload = multer({
   },
 });
 
-const apiRoute = nextConnect({
+// ---- Setup nextConnect ----
+const handler = nextConnect({
   onError(error, req, res) {
-    res.status(501).json({ message: `Error: ${error.message}` });
+    console.error("API Error:", error);
+    res.status(500).json({ message: `Server error: ${error.message}` });
   },
   onNoMatch(req, res) {
-    res.status(405).json({ message: `Method '${req.method}' Not Allowed` });
+    res.status(405).json({ message: `Method ${req.method} not allowed` });
   },
 });
 
-// ================= MIDDLEWARE =================
-apiRoute.use(upload.single("document"));
-
-apiRoute.post(async (req, res) => {
-  // ---- Setup CORS ----
+// ---- CORS Middleware ----
+handler.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "https://hay-card-front-end.vercel.app");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
+  if (req.method === "OPTIONS") {
+    res.status(200).end();
+    return;
+  }
+  next();
+});
+
+handler.use(upload.single("document"));
+
+// ---- POST Route ----
+handler.post(async (req, res) => {
   try {
     await connectToDatabase();
 
-    // ---- Upload to Cloudinary ----
+    if (!req.file) {
+      return res.status(400).json({ message: "File is required" });
+    }
+
+    // Upload to Cloudinary
     const uploadResult = await new Promise((resolve, reject) => {
-      cloudinary.uploader.upload_stream(
+      const stream = cloudinary.uploader.upload_stream(
         { resource_type: "raw", folder: "customer_samples" },
         (error, result) => {
           if (error) reject(error);
           else resolve(result);
         }
-      ).end(req.file.buffer);
+      );
+      stream.end(req.file.buffer);
     });
 
-    // ---- Save to MongoDB ----
     const newSample = new Sample({
       referenceNumber: req.body.referenceNumber,
       documentPath: uploadResult.secure_url,
@@ -75,13 +89,13 @@ apiRoute.post(async (req, res) => {
     await newSample.save();
 
     res.status(201).json({
-      message: "Sample uploaded successfully",
+      message: "Sample uploaded successfully!",
       sample: newSample,
     });
   } catch (err) {
     console.error("Upload error:", err);
-    res.status(500).json({ message: "Server error", error: err.message });
+    res.status(500).json({ message: "Upload failed", error: err.message });
   }
 });
 
-export default apiRoute;
+export default handler;
