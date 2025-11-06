@@ -1,39 +1,59 @@
-import connectMongo from "../../utils/mongo";
-import CustomerSample from "../../models/sampleAssignModel";
-import formidable from "formidable";
+import { v2 as cloudinary } from "cloudinary";
+import multer from "multer";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
+import mongoose from "mongoose";
+import Sample from "../../models/sampleAssignModel"; // adjust path if needed
+
+// ✅ Cloudinary Config
+cloudinary.config({
+  cloud_name: process.env.CLOUD_NAME,
+  api_key: process.env.CLOUD_KEY,
+  api_secret: process.env.CLOUD_SECRET,
+});
+
+// ✅ Set Cloudinary storage for multer
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "samples", // Cloudinary folder
+    allowed_formats: ["xls", "xlsx"],
+    resource_type: "raw", // important for non-image files
+  },
+});
+
+const upload = multer({ storage });
 
 export const config = {
-  api: {
-    bodyParser: false, // We use formidable
-  },
+  api: { bodyParser: false },
 };
 
+// ✅ Main API handler
 export default async function handler(req, res) {
-  await connectMongo();
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+  if (req.method === "OPTIONS") return res.status(200).end();
+
+  if (!mongoose.connections[0].readyState) {
+    await mongoose.connect(process.env.MONGO_URI);
+  }
 
   if (req.method === "POST") {
-    const form = new formidable.IncomingForm();
-
-    form.parse(req, async (err, fields, files) => {
-      if (err) return res.status(400).json({ message: "File parsing error" });
-
-      const { referenceNumber } = fields;
-      const file = files.document;
-
-      if (!referenceNumber || !file) {
-        return res.status(400).json({ message: "Reference number and file required" });
-      }
+    upload.single("document")(req, res, async (err) => {
+      if (err) return res.status(500).json({ message: err.message });
 
       try {
-        const newSample = new CustomerSample({
-          referenceNumber,
-          documentPath: file.originalFilename || "no-path", // for demo
+        const newSample = new Sample({
+          referenceNumber: req.body.referenceNumber,
+          quantity: req.body.quantity,
+          grade: req.body.grade,
+          documentPath: req.file.path, // ✅ Cloudinary file URL
         });
-
         await newSample.save();
-        res.status(201).json({ message: "Sample added successfully", sample: newSample });
+        return res.status(201).json(newSample);
       } catch (error) {
-        res.status(500).json({ message: "Server error", error: error.message });
+        return res.status(500).json({ message: error.message });
       }
     });
   } else {
