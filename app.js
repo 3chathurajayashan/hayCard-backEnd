@@ -8,6 +8,7 @@ const sampleRoutes = require("./routes/sampleRoute");
 const chemRoutes = require("./routes/chemRequestRoute");
 const Sample = require("./models/sampleModel");
 const User = require("./models/userModel");
+  const cusSampleRoutes = require("./routes/customerSampleRoute");
 const { sendEmail } = require("./utils/emailService");
 const cron = require("node-cron");
 
@@ -19,6 +20,7 @@ app.use("/users", userRoutes);
 app.use("/samples", sampleRoutes);
 app.use("/api/chemicals", chemRoutes);
  
+app.use("/api/cusSamples", cusSampleRoutes);
 
 const PORT = process.env.PORT || 5000;
 mongoose.connect("mongodb+srv://admin:admin@cluster0.afu07sh.mongodb.net/heyCrabDB?retryWrites=true&w=majority", { useNewUrlParser: true, useUnifiedTopology: true })
