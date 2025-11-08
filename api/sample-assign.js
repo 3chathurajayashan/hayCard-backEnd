@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import multer from "multer";
 import dotenv from "dotenv";
-import SampleAssign from "../models/sampleAssignModel.js"; // your Mongoose model
+import SampleAssign from "./models/SampleAssign"; // your Mongoose model
 
 dotenv.config();
 
