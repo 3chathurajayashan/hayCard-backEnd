@@ -7,20 +7,15 @@ import cron from "node-cron";
 import dotenv from "dotenv";
 import { sendEmail } from "../utils/emailService.js"; // adjust path if needed
 
+// Routes
 import userRoutes from "../routes/userRoute.js";
 import sampleRoutes from "../routes/sampleRoute.js";
 import chemRoutes from "../routes/chemRequestRoute.js";
 import cusSampleRoutes from "../routes/customerSampleRoute.js";
- import sampleAssignRoutes from "./routes/sampleAssignRoutes.js";
+import sampleAssignRoutes from "../routes/sampleAssignRoutes.js"; // ✅ fixed import path
 import Sample from "../models/sampleModel.js";
- 
-dotenv.config();
 
-/*const uploadDir = "./uploads";
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir);
-  console.log("Uploads folder created!");
-} */
+dotenv.config();
 
 const app = express();
 
@@ -45,7 +40,9 @@ app.use(
     credentials: true,
   })
 );
- 
+
+// ✅ For file uploads (Cloudinary base64)
+app.use(express.json({ limit: "10mb" }));
 app.use(bodyParser.json());
 app.use("/uploads", express.static("uploads"));
 
@@ -54,24 +51,25 @@ app.use("/api/users", userRoutes);
 app.use("/api/samples", sampleRoutes);
 app.use("/api/chemicals", chemRoutes);
 app.use("/api/cusSamples", cusSampleRoutes);
- 
-app.use(express.json({ limit: "10mb" })); // for base64 or file upload
+app.use("/api/sample-assign", sampleAssignRoutes); // ✅ added new route
 
+// ✅ Test route (for checking backend on Vercel)
 app.get("/", (req, res) => {
-  res.send("Sample Assign API is running");
+  res.send("✅ Sample Assign API is running on Vercel");
 });
-
-app.use("/api/sample-assign", sampleAssignRoutes);
- 
 
 // ✅ MongoDB connection (reuse across invocations)
 let isConnected = false;
 async function connectDB() {
   if (isConnected) return;
-  await mongoose.connect(process.env.MONGO_URI || "mongodb+srv://admin:admin@cluster0.afu07sh.mongodb.net/heyCrabDB?retryWrites=true&w=majority", {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  });
+  await mongoose.connect(
+    process.env.MONGO_URI ||
+      "mongodb+srv://admin:admin@cluster0.afu07sh.mongodb.net/heyCrabDB?retryWrites=true&w=majority",
+    {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    }
+  );
   isConnected = true;
   console.log("✅ MongoDB Connected");
 }
