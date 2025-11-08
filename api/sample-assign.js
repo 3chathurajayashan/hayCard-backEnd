@@ -1,23 +1,28 @@
-import mongoose from "mongoose";
 import express from "express";
-import cors from "cors";
+import mongoose from "mongoose";
+import multer from "multer";
 import dotenv from "dotenv";
-import sampleAssignRoutes from "../routes/sampleAssignRoutes.js";
+import { addSampleAssign, getAllSampleAssigns } from "../controllers/sampleAssignController";
 
 dotenv.config();
 const app = express();
-
-app.use(cors());
 app.use(express.json({ limit: "10mb" }));
 
-app.use("/api/sample-assign", sampleAssignRoutes);
+// Multer setup for file uploads
+const upload = multer({ storage: multer.memoryStorage() }); 
 
+// Routes
+app.post("/", upload.single("document"), addSampleAssign); // POST → /api/sample-assign
+app.get("/", getAllSampleAssigns);                         // GET  → /api/sample-assign
+
+// DB connection
 let isConnected = false;
 async function connectDB() {
-  if (isConnected) return;
-  await mongoose.connect(process.env.MONGO_URI);
-  isConnected = true;
-  console.log("✅ Mongo Connected (SampleAssign)");
+  if (!isConnected) {
+    await mongoose.connect(process.env.MONGO_URI);
+    isConnected = true;
+    console.log("✅ MongoDB Connected");
+  }
 }
 
 export default async function handler(req, res) {
