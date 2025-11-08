@@ -6,7 +6,6 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-// Multer memory storage
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
@@ -15,15 +14,14 @@ async function connectDB() {
   if (!isConnected) {
     await mongoose.connect(process.env.MONGO_URI);
     isConnected = true;
+    console.log("MongoDB connected");
   }
 }
 
-// Serverless handler
 export default async function handler(req, res) {
   await connectDB();
 
   if (req.method === "POST") {
-    // Handle file upload + referenceNumber
     upload.single("document")(req, res, async (err) => {
       if (err) return res.status(500).json({ message: err.message });
 
@@ -34,10 +32,7 @@ export default async function handler(req, res) {
         return res.status(400).json({ message: "Reference number & file required" });
 
       try {
-        // Convert file buffer to base64 for Cloudinary
-        const fileBase64 = `data:${file.mimetype};base64,${file.buffer.toString(
-          "base64"
-        )}`;
+        const fileBase64 = `data:${file.mimetype};base64,${file.buffer.toString("base64")}`;
 
         const uploadResponse = await cloudinary.uploader.upload(fileBase64, {
           resource_type: "auto",
