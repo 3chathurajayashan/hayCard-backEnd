@@ -18,7 +18,7 @@ const userRoutes = require("./routes/userRoute");
 const sampleRoutes = require("./routes/sampleRoute");
 const chemRoutes = require("./routes/chemRequestRoute");
 const cusSampleRoutes = require("./routes/customerSampleRoute");
-const customerSampleRoutes = require("./routes/sampleAssignRoutes");
+ 
 const Sample = require("./models/sampleModel");
 
 const app = express();
@@ -52,7 +52,7 @@ app.use("/users", userRoutes);
 app.use("/samples", sampleRoutes);
 app.use("/api/chemicals", chemRoutes);
 app.use("/cusSamples", cusSampleRoutes);
-app.use("/api/samples", customerSampleRoutes);
+ 
 
 const PORT = process.env.PORT || 5000;
 
