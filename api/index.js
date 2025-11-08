@@ -11,7 +11,7 @@ import userRoutes from "../routes/userRoute.js";
 import sampleRoutes from "../routes/sampleRoute.js";
 import chemRoutes from "../routes/chemRequestRoute.js";
 import cusSampleRoutes from "../routes/customerSampleRoute.js";
-import customerSampleRoutes from "../routes/sampleAssignRoutes.js";
+ 
 import Sample from "../models/sampleModel.js";
 
 dotenv.config();
@@ -54,7 +54,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/samples", sampleRoutes);
 app.use("/api/chemicals", chemRoutes);
 app.use("/api/cusSamples", cusSampleRoutes);
-app.use("/api/sampleAssign", customerSampleRoutes);
+ 
 
 // ✅ MongoDB connection (reuse across invocations)
 let isConnected = false;
