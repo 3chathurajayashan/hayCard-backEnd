@@ -16,11 +16,11 @@ import Sample from "../models/sampleModel.js";
 
 dotenv.config();
 
-const uploadDir = "./uploads";
+/*const uploadDir = "./uploads";
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir);
   console.log("Uploads folder created!");
-}
+} */
 
 const app = express();
 
