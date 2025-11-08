@@ -19,7 +19,7 @@ export const addSampleAssign = async (req, res) => {
     // Upload file to Cloudinary
     const uploadResponse = await cloudinary.uploader.upload(file, {
       resource_type: "auto", // allows any file type
-      folder: "sample_assign_docs",
+      folder: "samples",
     });
 
     // Save record in DB
