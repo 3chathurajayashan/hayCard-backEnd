@@ -11,7 +11,7 @@ import userRoutes from "../routes/userRoute.js";
 import sampleRoutes from "../routes/sampleRoute.js";
 import chemRoutes from "../routes/chemRequestRoute.js";
 import cusSampleRoutes from "../routes/customerSampleRoute.js";
- 
+ import sampleAssignRoutes from "./routes/sampleAssignRoutes.js";
 import Sample from "../models/sampleModel.js";
  
 dotenv.config();
@@ -55,7 +55,13 @@ app.use("/api/samples", sampleRoutes);
 app.use("/api/chemicals", chemRoutes);
 app.use("/api/cusSamples", cusSampleRoutes);
  
+app.use(express.json({ limit: "10mb" })); // for base64 or file upload
 
+app.get("/", (req, res) => {
+  res.send("Sample Assign API is running");
+});
+
+app.use("/api/sample-assign", sampleAssignRoutes);
  
 
 // ✅ MongoDB connection (reuse across invocations)
