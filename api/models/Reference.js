@@ -6,7 +6,7 @@ const ReferenceSchema = new mongoose.Schema({
     required: true,
   },
   document: {
-    type: String, // URL of uploaded document
+    type: String, // URL from Cloudinary
   },
   createdAt: {
     type: Date,

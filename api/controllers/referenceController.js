@@ -1,5 +1,5 @@
 import Reference from "../models/Reference.js";
-import cloudinary from "../config/cloudinary.js"; // your cloudinary config
+import cloudinary from "../config/cloudinary.js";
 import streamifier from "streamifier";
 
 export const addReference = async (req, res) => {
@@ -10,11 +10,10 @@ export const addReference = async (req, res) => {
     let documentUrl;
 
     if (req.file) {
-      // wrap upload_stream in a Promise
       const streamUpload = (fileBuffer) => {
         return new Promise((resolve, reject) => {
           const stream = cloudinary.uploader.upload_stream(
-            { folder: "samples" },
+            { folder: "references" },
             (error, result) => {
               if (result) resolve(result);
               else reject(error);
@@ -38,7 +37,6 @@ export const addReference = async (req, res) => {
   }
 };
 
-// Get all references
 export const getAllReferences = async (req, res) => {
   try {
     const refs = await Reference.find().sort({ createdAt: -1 });
