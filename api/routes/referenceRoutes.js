@@ -4,10 +4,11 @@ import { addReference, getAllReferences } from "../controllers/referenceControll
 
 const router = express.Router();
 
-// Use memory storage for serverless
+// Multer memory storage for serverless
 const storage = multer.memoryStorage();
-const upload = multer({ storage });
+const upload = multer({ storage }); // all files (PDF, CSV, Excel, images) accepted
 
+// Routes
 router.post("/add", upload.single("document"), addReference);
 router.get("/", getAllReferences);
 
