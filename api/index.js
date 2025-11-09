@@ -23,6 +23,7 @@ const app = express();
 const allowedOrigins = [
   "https://hay-card-front-end.vercel.app",
   "https://vermillion-melomakarona-e947bf.netlify.app",
+  "https://hay-card-front-ends-nine.vercel.app",
   "http://localhost:5173",
   "http://localhost:5000",
 ];
