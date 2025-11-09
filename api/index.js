@@ -11,17 +11,12 @@ import userRoutes from "../routes/userRoute.js";
 import sampleRoutes from "../routes/sampleRoute.js";
 import chemRoutes from "../routes/chemRequestRoute.js";
 import cusSampleRoutes from "../routes/customerSampleRoute.js";
- 
+ import documentRoutes from "./routes/documentRoutes.js";
 import Sample from "../models/sampleModel.js";
  
 dotenv.config();
 
-/*const uploadDir = "./uploads";
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir);
-  console.log("Uploads folder created!");
-} */
-
+ 
 const app = express();
 
 // ✅ Correct CORS setup for Vercel
@@ -55,7 +50,7 @@ app.use("/api/samples", sampleRoutes);
 app.use("/api/chemicals", chemRoutes);
 app.use("/api/cusSamples", cusSampleRoutes);
  
- 
+ app.use("/api/documents", documentRoutes);
 
 // ✅ MongoDB connection (reuse across invocations)
 let isConnected = false;
