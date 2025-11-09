@@ -5,6 +5,9 @@ const ReferenceSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  document: {
+    type: String, // URL of uploaded document
+  },
   createdAt: {
     type: Date,
     default: Date.now,
