@@ -4,10 +4,25 @@ import Document from "./models/documentModel.js";
 import multer from "./middleware/multer.js";
 import { Readable } from "stream";
 
-// connect to DB
+// Connect to MongoDB
 connectDB();
 
 export default async function handler(req, res) {
+  // -------------------
+  // 🔹 CORS Headers
+  // -------------------
+  res.setHeader("Access-Control-Allow-Origin", "https://hay-card-front-end.vercel.app"); // allow your frontend only
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  // Handle preflight requests
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
+  // -------------------
+  // 🔹 POST - Upload File
+  // -------------------
   if (req.method === "POST") {
     multer.single("file")(req, {}, async (err) => {
       if (err) return res.status(400).json({ message: err.message });
@@ -15,6 +30,7 @@ export default async function handler(req, res) {
       try {
         const { referenceNumber } = req.body;
         const file = req.file;
+
         if (!file) return res.status(400).json({ message: "No file uploaded" });
 
         const uploadStream = cloudinary.uploader.upload_stream(
@@ -40,15 +56,23 @@ export default async function handler(req, res) {
         res.status(500).json({ message: error.message });
       }
     });
-  } else if (req.method === "GET") {
+  } 
+  // -------------------
+  // 🔹 GET - List Documents
+  // -------------------
+  else if (req.method === "GET") {
     try {
       const docs = await Document.find().sort({ uploadedAt: -1 });
       res.status(200).json(docs);
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
-  } else {
-    res.setHeader("Allow", ["GET", "POST"]);
+  } 
+  // -------------------
+  // 🔹 Other Methods
+  // -------------------
+  else {
+    res.setHeader("Allow", ["GET", "POST", "OPTIONS"]);
     res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }
