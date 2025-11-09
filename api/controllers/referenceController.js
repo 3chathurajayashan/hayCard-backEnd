@@ -1,29 +1,31 @@
 import Reference from "../models/Reference.js";
-import cloudinary from "../config/cloudinary.js";
+import { v2 as cloudinary } from "cloudinary";
 import streamifier from "streamifier";
 
+// Add new reference with optional document
 export const addReference = async (req, res) => {
   try {
     const { refNumber } = req.body;
     if (!refNumber) return res.status(400).json({ message: "Reference number is required" });
 
-    let documentUrl;
+    let documentUrl = null;
 
     if (req.file) {
-      const streamUpload = (fileBuffer) => {
+      // Convert multer buffer to stream and upload to Cloudinary
+      const uploadFromBuffer = (buffer) => {
         return new Promise((resolve, reject) => {
           const stream = cloudinary.uploader.upload_stream(
-            { folder: "references" },
+            { folder: "references", resource_type: "raw" }, // raw for CSV/pdf
             (error, result) => {
-              if (result) resolve(result);
-              else reject(error);
+              if (error) return reject(error);
+              resolve(result);
             }
           );
-          streamifier.createReadStream(fileBuffer).pipe(stream);
+          streamifier.createReadStream(buffer).pipe(stream);
         });
       };
 
-      const result = await streamUpload(req.file.buffer);
+      const result = await uploadFromBuffer(req.file.buffer);
       documentUrl = result.secure_url;
     }
 
@@ -32,17 +34,7 @@ export const addReference = async (req, res) => {
 
     res.status(200).json(newRef);
   } catch (error) {
-    console.error("Add reference error:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-export const getAllReferences = async (req, res) => {
-  try {
-    const refs = await Reference.find().sort({ createdAt: -1 });
-    res.status(200).json(refs);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
+    console.error("Reference upload error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
