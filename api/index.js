@@ -22,6 +22,7 @@ const app = express();
 // ✅ Correct CORS setup for Vercel
 const allowedOrigins = [
   "https://hay-card-front-end.vercel.app",
+  "https://vermillion-melomakarona-e947bf.netlify.app",
   "http://localhost:5173",
   "http://localhost:5000",
 ];
