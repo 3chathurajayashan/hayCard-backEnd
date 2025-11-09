@@ -1,17 +1,20 @@
 import multer from "multer";
-import path from "path";
 
+// Use memory storage (files stored in memory as buffer)
 const storage = multer.memoryStorage();
 
-const fileFilter = (req, file, cb) => {
-  const ext = path.extname(file.originalname);
-  if (ext === ".pdf" || ext === ".xlsx" || ext === ".xls" || ext === ".docx") {
-    cb(null, true);
-  } else {
-    cb(new Error("Only document or Excel files allowed!"), false);
+// Create multer instance
+const upload = multer({ 
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // optional: max file size 10MB
+  fileFilter: (req, file, cb) => {
+    // optional: filter allowed file types
+    if (file.mimetype === "application/pdf" || file.mimetype.startsWith("image/")) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only PDF or images allowed"));
+    }
   }
-};
-
-const upload = multer({ storage, fileFilter });
+});
 
 export default upload;

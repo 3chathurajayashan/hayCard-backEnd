@@ -7,9 +7,18 @@ export const addReference = async (req, res) => {
 
     let documentUrl;
     if (req.file) {
-      const result = await cloudinary.uploader.upload(req.file.path, { folder: "samples" });
+  const result = await cloudinary.uploader.upload_stream(
+    { folder: "references" },
+    (error, result) => {
+      if (error) throw error;
       documentUrl = result.secure_url;
     }
+  );
+
+  // convert buffer to stream
+  const streamifier = require("streamifier");
+  streamifier.createReadStream(req.file.buffer).pipe(result);
+}
 
     const newRef = new Reference({ refNumber, document: documentUrl });
     await newRef.save();
