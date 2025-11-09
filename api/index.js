@@ -97,7 +97,6 @@ cron.schedule(
 );
 
 // ✅ Export as Vercel Serverless Function
-export default async function handler(req, res) {
-  await connectDB();
-  return app(req, res);
+export default function handler(req, res) {
+  res.status(200).json({ message: "Backend is running successfully 🚀" });
 }
