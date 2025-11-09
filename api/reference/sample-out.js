@@ -1,5 +1,5 @@
-import dbConnect from "../";
-import Reference from "../../models/Reference";
+import dbConnect from "../../lib/dbConnect";
+import Reference from "../models/Reference";
 
 export default async function handler(req, res) {
   await dbConnect();

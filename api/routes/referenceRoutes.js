@@ -1,15 +1,18 @@
 import express from "express";
 import multer from "multer";
-import { addReference, getAllReferences } from "../controllers/referenceController.js";
+import { addReference, getAllReferences, markSampleOut } from "../controllers/referenceController";
 
 const router = express.Router();
 
-// Multer memory storage for serverless
+// Multer memory storage
 const storage = multer.memoryStorage();
-const upload = multer({ storage }); // all files (PDF, CSV, Excel, images) accepted
+const upload = multer({ storage });
 
 // Routes
 router.post("/add", upload.single("document"), addReference);
 router.get("/", getAllReferences);
+
+// ✅ New route for sample out
+router.post("/sample-out", markSampleOut);
 
 export default router;
