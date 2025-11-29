@@ -108,12 +108,27 @@ exports.updateSample = async (req, res) => {
     sample.updatedAt = new Date();
     await sample.save();
 
-    // Send email to admin (every time sample is updated)
-    await sendEmail(
-      "Sample Updated Notification",
-      `<p>Hello! The sample <strong>${sample.sampleRefNo}</strong> has been updated.</p>
-       <p>Updated by User ID: ${req.user._id}</p>`
-    );
+    // Send email to admin with button to view results
+    const emailHtml = `
+      <p>Hello!</p>
+      <p>The sample <strong>${sample.sampleRefNo}</strong> has been updated.</p>
+      <p>Updated by User ID: ${req.user._id}</p>
+      <a href="https://hay-card-front-ends-nine.vercel.app/editDashboard" 
+         style="
+            display:inline-block;
+            padding:12px 24px;
+            margin-top:20px;
+            background-color:#00796b;
+            color:white;
+            text-decoration:none;
+            border-radius:8px;
+            font-weight:bold;
+         ">
+         View Added Results
+      </a>
+    `;
+
+    await sendEmail("Sample Updated Notification", emailHtml);
 
     const populatedSample = await Sample.findById(sample._id).populate("createdBy");
     res.json(populatedSample);
