@@ -108,21 +108,17 @@ exports.updateSample = async (req, res) => {
     sample.updatedAt = new Date();
     await sample.save();
 
-    // Notify creator if updated by someone else
-    if (req.user._id.toString() !== sample.createdBy.toString()) {
-      const creator = await User.findById(sample.createdBy);
-      if (creator) {
-         // Send email to lab admin
+    // Send email to admin (every time sample is updated)
     await sendEmail(
-      "Added Results for Sample",
-      `<p>Hello chiranga! you have added results to ,Sample Ref: ${sample.sampleRefNo}</p>`
+      "Sample Updated Notification",
+      `<p>Hello! The sample <strong>${sample.sampleRefNo}</strong> has been updated.</p>
+       <p>Updated by User ID: ${req.user._id}</p>`
     );
-      }
-    }
 
     const populatedSample = await Sample.findById(sample._id).populate("createdBy");
     res.json(populatedSample);
   } catch (err) {
+    console.error("Error updating sample:", err.message);
     res.status(500).json({ message: err.message });
   }
 };
