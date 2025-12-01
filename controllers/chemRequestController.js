@@ -1,4 +1,7 @@
 const Chemical = require("../models/chemRequestModel");
+const User = require("../models/userModel");
+const { sendEmail } = require("../utils/emailService");
+const moment = require("moment-timezone");
 
 // ✅ Add a new chemical
 const addChemical = async (req, res) => {
