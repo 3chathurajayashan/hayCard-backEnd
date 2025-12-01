@@ -29,7 +29,7 @@ const addCusSample = async (req, res) => {
 
     // ✅ Send Email Notification
     await sendEmail(
-      "New Customer Sample Added",
+      "New Customer Sample IN",
       `
         <p>Hello! A new customer sample has been added to the system.<br>
         <strong>Reference:</strong> ${newSample.referenceNumber}<br>
@@ -39,7 +39,7 @@ const addCusSample = async (req, res) => {
         <strong>Time:</strong> ${newSample.time}</p>
 
         <a 
-          href="https://hay-card-front-ends-nine.vercel.app/editDashboard" 
+          href="https://hay-card-front-ends-nine.vercel.app/samplein" 
           style="
             display: inline-block;
             margin-top: 20px;

@@ -132,7 +132,7 @@ exports.updateSample = async (req, res) => {
     // Send email to admin with button to view results
     const emailHtml = `
       <p>Hello!</p>
-      <p>The sample <strong>${sample.sampleRefNo}</strong> has been updated!</p>
+      <p>The sample Ref Number <strong>${sample.sampleRefNo}</strong> has been updated!</p>
       <p>Updated by User ID: ${req.user._id}</p>
       <a href="https://hay-card-front-ends-nine.vercel.app/sign" 
          style="
