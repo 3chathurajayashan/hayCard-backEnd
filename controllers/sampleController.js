@@ -58,7 +58,7 @@ exports.createSample = async (req, res) => {
     <strong>Sample Ref:</strong> ${sample.sampleRefNo}</p>
 
     <a 
-      href="https://hay-card-front-ends-nine.vercel.app/editDashboard" 
+      href="https://hay-card-front-ends-nine.vercel.app/sign" 
       style="
         display: inline-block;
         margin-top: 20px;
@@ -134,7 +134,7 @@ exports.updateSample = async (req, res) => {
       <p>Hello!</p>
       <p>The sample <strong>${sample.sampleRefNo}</strong> has been updated!</p>
       <p>Updated by User ID: ${req.user._id}</p>
-      <a href="https://hay-card-front-ends-nine.vercel.app/editDashboard" 
+      <a href="https://hay-card-front-ends-nine.vercel.app/sign" 
          style="
             display:inline-block;
             padding:12px 24px;
@@ -190,7 +190,7 @@ exports.updateReceivedStatus = async (req, res) => {
     <strong>Time (Sri Lanka):</strong> ${receivedTime}</p>
 
     <a 
-      href="https://hay-card-front-ends-nine.vercel.app/editDashboard" 
+      href="https://hay-card-front-ends-nine.vercel.app/sign" 
       style="
         display: inline-block;
         margin-top: 20px;
