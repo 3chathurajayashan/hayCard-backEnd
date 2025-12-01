@@ -23,11 +23,42 @@ const addCusSample = async (req, res) => {
     });
 
     await newSample.save();
+
+    // ✅ Send Email Notification
+    await sendEmail(
+      "New Customer Sample IN",
+      `
+        <p>Hello There A new customer sample has been In to the system.<br>
+        <strong>Reference:</strong> ${newSample.referenceNumber}<br>
+        <strong>Quantity:</strong> ${newSample.quantity}<br>
+        <strong>Grade:</strong> ${newSample.grade}<br>
+        <strong>Date:</strong> ${newSample.date}<br>
+        <strong>Time:</strong> ${newSample.time}</p>
+
+        <a 
+          href="https://hay-card-front-ends-nine.vercel.app/samplein" 
+          style="
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 20px;
+            background: #007bff;
+            color: white !important;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+          "
+        >
+          View Sample In
+        </a>
+      `
+    );
+
     res.status(201).json({ message: "Customer sample added successfully!", sample: newSample });
   } catch (error) {
     res.status(500).json({ message: "Error adding sample", error: error.message });
   }
 };
+
 
 // 📋 Get all customer samples
 const getCusSamples = async (req, res) => {

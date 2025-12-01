@@ -51,9 +51,30 @@ exports.createSample = async (req, res) => {
 
        // Send email to lab admin
     await sendEmail(
-      "New Sample Added",
-      `<p>Hello chiranga! A new sample has been added to the system.Check your dashboard. Sample Ref: ${sample.sampleRefNo}</p>`
-    );
+  "New Sample Added",
+  `
+    <p>Hello chiranga! A new sample has been added to the system.<br>
+    Check your dashboard.<br>
+    <strong>Sample Ref:</strong> ${sample.sampleRefNo}</p>
+
+    <a 
+      href="https://hay-card-front-ends-nine.vercel.app/editDashboard" 
+      style="
+        display: inline-block;
+        margin-top: 20px;
+        padding: 12px 20px;
+        background: #007bff;
+        color: white !important;
+        text-decoration: none;
+        border-radius: 6px;
+        font-weight: bold;
+      "
+    >
+      Check Sample
+    </a>
+  `
+);
+
 
     // Return populated sample for front-end
     const populatedSample = await Sample.findById(sample._id).populate("createdBy");
@@ -111,7 +132,7 @@ exports.updateSample = async (req, res) => {
     // Send email to admin with button to view results
     const emailHtml = `
       <p>Hello!</p>
-      <p>The sample <strong>${sample.sampleRefNo}</strong> has been updated.</p>
+      <p>The sample <strong>${sample.sampleRefNo}</strong> has been updated!</p>
       <p>Updated by User ID: ${req.user._id}</p>
       <a href="https://hay-card-front-ends-nine.vercel.app/editDashboard" 
          style="
@@ -161,12 +182,31 @@ exports.updateReceivedStatus = async (req, res) => {
 
     if (received) {
       await sendEmail(
-        "Sample Received!",
-        `<p>Hello Chiranga! The sample has been received successfully.<br>
-        <strong>Sample Ref:</strong> ${sample.sampleRefNo}<br>
-        <strong>Date:</strong> ${receivedDate}<br>
-        <strong>Time (Sri Lanka):</strong> ${receivedTime}</p>`
-      );
+  "Sample Received!",
+  `
+    <p>Hello There! The sample has been received successfully.<br>
+    <strong>Sample Ref:</strong> ${sample.sampleRefNo}<br>
+    <strong>Date:</strong> ${receivedDate}<br>
+    <strong>Time (Sri Lanka):</strong> ${receivedTime}</p>
+
+    <a 
+      href="https://hay-card-front-ends-nine.vercel.app/editDashboard" 
+      style="
+        display: inline-block;
+        margin-top: 20px;
+        padding: 12px 20px;
+        background: #007bff;
+        color: white !important;
+        text-decoration: none;
+        border-radius: 6px;
+        font-weight: bold;
+      "
+    >
+      View Sample
+    </a>
+  `
+);
+
     }
 
     res.status(200).json(sample);

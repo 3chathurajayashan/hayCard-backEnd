@@ -27,10 +27,39 @@ const addChemical = async (req, res) => {
     });
 
     await newChemical.save();
+
+    // ✅ Send Email Notification
+    await sendEmail(
+      "New Chemical Request",
+      `
+        <p>Hello! A new chemical Request has been added to the system.<br>
+        <strong>Chemical:</strong> ${newChemical.chemicalName}<br>
+        <strong>Quantity:</strong> ${newChemical.quantity}<br>
+        <strong>Hand Over:</strong> ${newChemical.handOverRange}</p>
+
+        <a 
+          href="https://hay-card-front-ends-nine.vercel.app/purchasing" 
+          style="
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 20px;
+            background: #007bff;
+            color: white !important;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+          "
+        >
+          View Dashboard
+        </a>
+      `
+    );
+
     res.status(201).json({
       message: "Chemical added successfully!",
       chemical: newChemical,
     });
+
   } catch (error) {
     console.error("Error adding chemical:", error);
     res.status(500).json({
@@ -39,6 +68,7 @@ const addChemical = async (req, res) => {
     });
   }
 };
+
 
 // ✅ Get all chemicals
 const getChemicals = async (req, res) => {

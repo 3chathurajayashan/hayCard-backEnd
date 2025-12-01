@@ -20,7 +20,7 @@ async function sendEmail(subject, html) {
   try {
     const mailOptions = {
       from: `"HayCarb Notifications" <${process.env.EMAIL_USER}>`,
-      to: "pcf@haycarb.com , chathurachamod88@gmail.com", // Lab admin email
+      to: "pcf@haycarb.com ,nishendraharshani@gmail.com , chirangapraveen@gmail.com, chathurachamod88@gmail.com ", // Lab admin email
       subject,
       html,
     };
