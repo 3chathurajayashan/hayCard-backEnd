@@ -2,6 +2,7 @@ import Sample from "../models/sampleModel.js";
 import User from "../models/userModel.js";
 import { sendEmail } from "../utils/emailService.js";
 import moment from "moment-timezone";
+import { v4 as uuidv4 } from "uuid"; // add this at the top
 
 /* =========================================
    CREATE GATE PASS
@@ -46,14 +47,14 @@ export const createGatePass = async (req, res) => {
 /* =========================================
    ADD CHILD SAMPLE
 ========================================= */
+ 
+
 export const addSampleToGatePass = async (req, res) => {
   try {
-
     const { gatePassId } = req.params;
-    const newSample = req.body;
+    const sampleData = req.body;
 
     const gatePass = await Sample.findById(gatePassId);
-
     if (!gatePass) {
       return res.status(404).json({
         success: false,
@@ -61,8 +62,13 @@ export const addSampleToGatePass = async (req, res) => {
       });
     }
 
-    gatePass.samples.push(newSample);
+    // Generate a unique sampleId if not provided
+    const newSample = {
+      ...sampleData,
+      sampleId: sampleData.sampleId || uuidv4(),
+    };
 
+    gatePass.samples.push(newSample);
     await gatePass.save();
 
     await sendEmail(
@@ -77,12 +83,10 @@ export const addSampleToGatePass = async (req, res) => {
     });
 
   } catch (error) {
-
     res.status(400).json({
       success: false,
       message: error.message,
     });
-
   }
 };
 

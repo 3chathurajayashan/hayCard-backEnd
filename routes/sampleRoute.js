@@ -18,35 +18,13 @@ const router = express.Router();
    GATE PASS ROUTES
 ========================================= */
 
-// Create Gate Pass
-router.post("/",  createGatePass);
-router.get("/public/:id", getPublicSample);
-
-// Get All Gate Passes
-router.get("/",   getAllGatePasses);
-
-// Get Single Gate Pass
+router.post("/", createGatePass);
+router.get("/public/:id", getPublicSample); // MUST be BEFORE /:id
+router.get("/", getAllGatePasses);
 router.get("/:id", protect, getSingleGatePass);
-
-
-/* =========================================
-   CHILD SAMPLE ROUTES
-========================================= */
-
-// Add sample to Gate Pass
 router.post("/:gatePassId/sample", protect, addSampleToGatePass);
-
-// Update child sample
 router.put("/:gatePassId/sample/:sampleId", protect, updateChildSample);
-
-// Delete child sample
 router.delete("/:gatePassId/sample/:sampleId", protect, deleteChildSample);
-
-
-/* =========================================
-   RECEIVED STATUS
-========================================= */
-
 router.put("/:id/received", protect, updateReceivedStatus);
 
 
