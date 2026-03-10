@@ -8,7 +8,8 @@ import {
   getSingleGatePass,
   updateChildSample,
   deleteChildSample,
-  updateReceivedStatus
+  updateReceivedStatus,
+  getPublicSample
 } from "../controllers/sampleController.js";
 
 const router = express.Router();
@@ -19,6 +20,7 @@ const router = express.Router();
 
 // Create Gate Pass
 router.post("/",  createGatePass);
+router.get("/public/:id", getPublicSample);
 
 // Get All Gate Passes
 router.get("/",   getAllGatePasses);

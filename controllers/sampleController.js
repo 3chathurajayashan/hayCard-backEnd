@@ -90,16 +90,9 @@ export const addSampleToGatePass = async (req, res) => {
    GET ALL GATE PASSES
 ========================================= */
 export const getAllGatePasses = async (req, res) => {
-
   try {
-
-    let filter = {};
-
-    if (req.user.role === "factory") {
-      filter.createdBy = req.user._id;
-    }
-
-    const gatePasses = await Sample.find(filter)
+    // Fetch all samples without any user filtering
+    const gatePasses = await Sample.find()
       .populate("createdBy", "name email")
       .populate("assignedTo", "name email")
       .sort({ createdAt: -1 });
@@ -111,14 +104,11 @@ export const getAllGatePasses = async (req, res) => {
     });
 
   } catch (error) {
-
     res.status(500).json({
       success: false,
       message: error.message,
     });
-
   }
-
 };
 
 /* =========================================
@@ -155,6 +145,53 @@ export const getSingleGatePass = async (req, res) => {
 
   }
 
+};
+/* =========================================
+   GET PUBLIC SAMPLE (NO AUTH)
+========================================= */
+export const getPublicSample = async (req, res) => {
+  try {
+    const { id } = req.params; // this can be Gate Pass ID or sampleId
+
+    // Fetch gate pass containing this child sample
+    const gatePass = await Sample.findOne({
+      "samples._id": id, // match child sample _id
+    }).populate("createdBy", "name email")
+      .populate("assignedTo", "name email");
+
+    if (!gatePass) {
+      return res.status(404).json({
+        success: false,
+        message: "Sample not found",
+      });
+    }
+
+    // Find the specific child sample
+    const sample = gatePass.samples.id(id);
+
+    res.status(200).json({
+      success: true,
+      gatePass: {
+        _id: gatePass._id,
+        requestRefNo: gatePass.requestRefNo,
+        sampleRefNo: gatePass.sampleRefNo,
+        from: gatePass.from,
+        to: gatePass.to,
+        sampleRoute: gatePass.sampleRoute,
+        remarks: gatePass.remarks,
+        createdBy: gatePass.createdBy,
+        assignedTo: gatePass.assignedTo,
+        createdAt: gatePass.createdAt,
+      },
+      sample,
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
 };
 
 /* =========================================
