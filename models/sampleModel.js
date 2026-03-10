@@ -1,81 +1,121 @@
-const mongoose = require("mongoose");
-const QRCode = require("qrcode");
+import mongoose from "mongoose";
+import QRCode from "qrcode";
 
 const Schema = mongoose.Schema;
 
+/* -----------------------------
+   🔹 Child Sample Schema
+--------------------------------*/
+const childSampleSchema = new Schema(
+  {
+    sampleId: {
+      type: String,
+      required: true,
+    },
+
+    testMethod: { type: String },
+    unitNumber: { type: String },
+
+    results: {
+      type: Map,
+      of: String,
+      default: {},
+    },
+
+    analysedBy: { type: String },
+    completedDate: { type: String },
+    completedTime: { type: String },
+  },
+  { _id: true }
+);
+
+/* -----------------------------
+   🔹 Parent (Gate Pass)
+--------------------------------*/
 const sampleSchema = new Schema({
   requestRefNo: { type: String, required: true },
   sampleRefNo: { type: String, required: true },
+
   to: { type: String, default: "Haycarb Colombo Lab" },
-  from: { type: [String], enum: ["HCM", "HCB", "HCM HCB"], required: true }, // can be HCM, HCB, or both
+
+  from: {
+    type: [String],
+    enum: ["HCM", "HCB", "HCM HCB"],
+    required: true,
+  },
+
   remarks: { type: String },
 
   sampleInTime: { type: String },
   sampleInDate: { type: String },
-  gatePassNo: { type: String },
 
-  // Received time and date at Haycarb (non-editable by creator)
+  gatePassNo: { type: String, required: true },
+
   sampleReceivedTime: { type: String },
   sampleReceivedDate: { type: String },
 
-  // Sample transport path
   sampleRoute: {
     type: String,
-    enum: ["Direct from Madampe", "Direct from Badalgama", "Through Wewalduwa"],
+    enum: [
+      "Direct from Madampe",
+      "Direct from Badalgama",
+      "Through Wewalduwa",
+    ],
     required: true,
   },
 
-  // Test details
-  testMethod: { type: String },
-results: [
-  {
-    As_ppb: String,
-    Sb_ppb: String,
-    Al_ppb: String,
-  },
-],
+  samples: [childSampleSchema],
 
-
-  analysedBy: { type: String },
-  completedDate: { type: String },
-  completedTime: { type: String },
-
-  // Tracking and QR
-  sampleId: { type: String, unique: true },
   qrCodeDataUrl: { type: String },
 
-  // System flags & timestamps
   isFinalized: { type: Boolean, default: false },
- createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
-  assignedTo: { type: Schema.Types.ObjectId, ref: "userModel" },
+
+  createdBy: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+
+  assignedTo: {
+    type: Schema.Types.ObjectId,
+    ref: "userModel",
+  },
+
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date },
   receivedAt: { type: Date },
   openedAt: { type: Date },
-  received: { type: Boolean, default: false },
-receivedDate: { type: String, default: null },
-receivedTime: { type: String, default: null },
 
+  received: { type: Boolean, default: false },
+  receivedDate: { type: String, default: null },
+  receivedTime: { type: String, default: null },
 });
 
-// 🔹 Pre-save hook for generating QR + sampleId
-sampleSchema.pre("save", async function (next) {
-  if (!this.sampleId) {
-    const date = new Date();
-    const dateStr = date.toISOString().slice(0, 10).replace(/-/g, "");
-    this.sampleId = `LAB-${dateStr}-${Math.floor(Math.random() * 9000) + 1000}`;
+/* -----------------------------
+   🔹 Validate Duplicate sampleId
+--------------------------------*/
+sampleSchema.pre("save", async function () {
+  const sampleIds = this.samples.map((s) => s.sampleId);
+
+  const uniqueIds = new Set(sampleIds);
+  if (uniqueIds.size !== sampleIds.length) {
+    throw new Error("Duplicate sampleId inside this Gate Pass");
   }
 
-  const link = `${process.env.FRONTEND_BASE_URL || "http://localhost:3000"}/samples/${this.sampleId}`;
-  try {
-    const dataUrl = await QRCode.toDataURL(link);
-    this.qrCodeDataUrl = dataUrl;
-  } catch (err) {
-    console.error("QR generation error:", err);
+  for (let id of sampleIds) {
+    const existing = await mongoose.model("Sample").findOne({
+      "samples.sampleId": id,
+      _id: { $ne: this._id },
+    });
+
+    if (existing) {
+      throw new Error(`sampleId ${id} already exists in another Gate Pass`);
+    }
   }
 
   this.updatedAt = new Date();
-  next();
 });
 
-module.exports = mongoose.model("Sample", sampleSchema);
+const Sample = mongoose.model("Sample", sampleSchema);
+
+export default Sample;

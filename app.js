@@ -15,7 +15,7 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 const userRoutes = require("./routes/userRoute");
-const sampleRoutes = require("./routes/sampleRoute");
+const sampleRoutes = require("./routes/sampleRoute").default;
 const chemRoutes = require("./routes/chemRequestRoute");
 const cusSampleRoutes = require("./routes/customerSampleRoute");
  
@@ -24,26 +24,15 @@ const Sample = require("./models/sampleModel");
 const app = express();
 
 // ✅ Correct CORS setup
-const allowedOrigins = [
-  "https://hay-card-front-end.vercel.app",
-  "http://localhost:5173",
-  "http://localhost:3000"
-];
+// const allowedOrigins = [
+//   "https://hay-card-front-end.vercel.app",
+//   "http://localhost:5173",
+//   "http://localhost:3000"
+// ];
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
-  })
-);
+app.use(cors({
+  origin: "*"
+}));
 
 app.use(bodyParser.json());
 app.use("/uploads", express.static("uploads"));

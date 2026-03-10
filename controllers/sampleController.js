@@ -1,42 +1,23 @@
-const Sample = require("../models/sampleModel");
-const User = require("../models/userModel");
-const { sendEmail } = require("../utils/emailService");
-const moment = require("moment-timezone");
+import Sample from "../models/sampleModel.js";
+import User from "../models/userModel.js";
+import { sendEmail } from "../utils/emailService.js";
+import moment from "moment-timezone";
 
-// CREATE new sample
-exports.createSample = async (req, res) => {
+/* =========================================
+   CREATE GATE PASS
+========================================= */
+export const createGatePass = async (req, res) => {
   try {
-    const {
-      requestRefNo,
-      sampleRefNo,
-      from,
-      gatePassNo,
-      sampleInTime,
-      sampleInDate,
-      remarks,
-      sampleRoute,
-      testMethod,
-    } = req.body;
+    const data = req.body;
 
-    // Validate sampleRoute
-    if (!sampleRoute || !["Direct from Madampe", "Direct from Badalgama", "Through Wewalduwa"].includes(sampleRoute)) {
-      return res.status(400).json({ message: "Invalid sampleRoute value" });
-    }
-
-    const sample = await Sample.create({
-      requestRefNo,
-      sampleRefNo,
-      from,
-      gatePassNo,
-      sampleInTime,
-      sampleInDate,
-      remarks,
-      sampleRoute,
-      testMethod,
-      createdBy: req.user._id,
+    const newGatePass = new Sample({
+      ...data,
+      createdBy: "68ed3e55ee9b3be6e6c2f465",
     });
 
-    // Notify lab technicians
+    await newGatePass.save();
+
+    /* EMAIL TO TECHNICIANS */
     const techs = await User.find({ role: "technician" });
     const techEmails = techs.map((t) => t.email);
 
@@ -44,129 +25,246 @@ exports.createSample = async (req, res) => {
       await sendEmail(
         techEmails.join(","),
         "New Sample Registered",
-        `<p>A new sample <strong>${sample.sampleId}</strong> has been registered.</p>
-         <p>Check Dashboard: <a href="${process.env.FRONTEND_BASE_URL || "http://localhost:5000"}/samples/${sample.sampleId}">View Sample</a></p>`
+        `<p>A new Gate Pass <strong>${newGatePass.sampleRefNo}</strong> has been created.</p>`
       );
     }
 
-       // Send email to lab admin
-    await sendEmail(
-  "New Sample Added",
-  `
-    <p>Hello chiranga! A new sample has been added to the system.<br>
-    Check your dashboard.<br>
-    <strong>Sample Ref:</strong> ${sample.sampleRefNo}</p>
+    res.status(201).json({
+      success: true,
+      message: "Gate Pass created successfully",
+      data: newGatePass,
+    });
 
-    <a 
-      href="https://hay-card-front-ends-nine.vercel.app/sign" 
-      style="
-        display: inline-block;
-        margin-top: 20px;
-        padding: 12px 20px;
-        background: #007bff;
-        color: white !important;
-        text-decoration: none;
-        border-radius: 6px;
-        font-weight: bold;
-      "
-    >
-      Check Sample
-    </a>
-  `
-);
-
-
-    // Return populated sample for front-end
-    const populatedSample = await Sample.findById(sample._id).populate("createdBy");
-    res.status(201).json(populatedSample);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: err.message });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
-// GET all samples
-exports.getSamples = async (req, res) => {
+/* =========================================
+   ADD CHILD SAMPLE
+========================================= */
+export const addSampleToGatePass = async (req, res) => {
   try {
-    let filter = {};
-    if (req.user.role === "factory") {
-      filter.createdBy = req.user._id;
-    } else if (req.user.role === "technician") {
-      filter = { $or: [{ assignedTo: req.user._id }, { status: "Registered" }] };
+
+    const { gatePassId } = req.params;
+    const newSample = req.body;
+
+    const gatePass = await Sample.findById(gatePassId);
+
+    if (!gatePass) {
+      return res.status(404).json({
+        success: false,
+        message: "Gate Pass not found",
+      });
     }
 
-    const samples = await Sample.find(filter).populate("createdBy").sort({ createdAt: -1 });
-    res.json(samples);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    gatePass.samples.push(newSample);
+
+    await gatePass.save();
+
+    await sendEmail(
+      "Sample Added",
+      `<p>A new child sample <strong>${newSample.sampleId}</strong> was added.</p>`
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Sample added successfully",
+      data: gatePass,
+    });
+
+  } catch (error) {
+
+    res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+
   }
 };
 
-// GET single sample by ID
-exports.getSampleById = async (req, res) => {
+/* =========================================
+   GET ALL GATE PASSES
+========================================= */
+export const getAllGatePasses = async (req, res) => {
+
   try {
-    const sample = await Sample.findById(req.params.id).populate("createdBy");
-    if (!sample) return res.status(404).json({ message: "Sample not found" });
-    res.json(sample);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+
+    let filter = {};
+
+    if (req.user.role === "factory") {
+      filter.createdBy = req.user._id;
+    }
+
+    const gatePasses = await Sample.find(filter)
+      .populate("createdBy", "name email")
+      .populate("assignedTo", "name email")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: gatePasses.length,
+      data: gatePasses,
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+
   }
+
 };
 
-// UPDATE sample
-exports.updateSample = async (req, res) => {
-  try {
-    const sample = await Sample.findById(req.params.id);
-    if (!sample) return res.status(404).json({ message: "Sample not found" });
+/* =========================================
+   GET SINGLE GATE PASS
+========================================= */
+export const getSingleGatePass = async (req, res) => {
 
-    // Prevent creator from editing receivedTime/date
-    if (req.user._id.toString() === sample.createdBy.toString()) {
-      delete req.body.sampleReceivedTime;
-      delete req.body.sampleReceivedDate;
+  try {
+
+    const gatePass = await Sample.findById(req.params.id)
+      .populate("createdBy", "name email")
+      .populate("assignedTo", "name email");
+
+    if (!gatePass) {
+
+      return res.status(404).json({
+        success: false,
+        message: "Gate Pass not found",
+      });
+
+    }
+
+    res.status(200).json({
+      success: true,
+      data: gatePass,
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+
+  }
+
+};
+
+/* =========================================
+   UPDATE CHILD SAMPLE
+========================================= */
+export const updateChildSample = async (req, res) => {
+
+  try {
+
+    const { gatePassId, sampleId } = req.params;
+
+    const gatePass = await Sample.findById(gatePassId);
+
+    if (!gatePass) {
+      return res.status(404).json({
+        success: false,
+        message: "Gate Pass not found",
+      });
+    }
+
+    const sample = gatePass.samples.find(
+      (s) => s.sampleId === sampleId
+    );
+
+    if (!sample) {
+      return res.status(404).json({
+        success: false,
+        message: "Sample not found",
+      });
     }
 
     Object.assign(sample, req.body);
-    sample.updatedAt = new Date();
-    await sample.save();
 
-    // Send email to admin with button to view results
-    const emailHtml = `
-      <p>Hello!</p>
-      <p>The sample Ref Number <strong>${sample.sampleRefNo}</strong> has been updated!</p>
-      <p>Updated by User ID: ${req.user._id}</p>
-      <a href="https://hay-card-front-ends-nine.vercel.app/sign" 
-         style="
-            display:inline-block;
-            padding:12px 24px;
-            margin-top:20px;
-            background-color:#00796b;
-            color:white;
-            text-decoration:none;
-            border-radius:8px;
-            font-weight:bold;
-         ">
-         View Added Results
-      </a>
-    `;
+    await gatePass.save();
 
-    await sendEmail("Sample Updated Notification", emailHtml);
+    await sendEmail(
+      "Sample Updated Notification",
+      `<p>The sample <strong>${sample.sampleId}</strong> has been updated.</p>`
+    );
 
-    const populatedSample = await Sample.findById(sample._id).populate("createdBy");
-    res.json(populatedSample);
-  } catch (err) {
-    console.error("Error updating sample:", err.message);
-    res.status(500).json({ message: err.message });
+    res.status(200).json({
+      success: true,
+      message: "Sample updated successfully",
+      data: gatePass,
+    });
+
+  } catch (error) {
+
+    res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+
   }
+
 };
-// sampleController.js
- 
-exports.updateReceivedStatus = async (req, res) => {
+
+/* =========================================
+   DELETE CHILD SAMPLE
+========================================= */
+export const deleteChildSample = async (req, res) => {
+
   try {
+
+    const { gatePassId, sampleId } = req.params;
+
+    const gatePass = await Sample.findById(gatePassId);
+
+    if (!gatePass) {
+      return res.status(404).json({
+        success: false,
+        message: "Gate Pass not found",
+      });
+    }
+
+    gatePass.samples = gatePass.samples.filter(
+      (s) => s.sampleId !== sampleId
+    );
+
+    await gatePass.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Sample deleted successfully",
+      data: gatePass,
+    });
+
+  } catch (error) {
+
+    res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+
+  }
+
+};
+
+/* =========================================
+   UPDATE RECEIVED STATUS (OLD SYSTEM)
+========================================= */
+export const updateReceivedStatus = async (req, res) => {
+
+  try {
+
     const { id } = req.params;
     const { received } = req.body;
 
-    // 🕒 Get Sri Lankan local time (GMT+5:30)
     const now = moment().tz("Asia/Colombo");
+
     const receivedDate = now.format("YYYY-MM-DD");
     const receivedTime = now.format("hh:mm:ss A");
 
@@ -181,61 +279,23 @@ exports.updateReceivedStatus = async (req, res) => {
     );
 
     if (received) {
-      await sendEmail(
-  "Sample Received!",
-  `
-    <p>Hello There! The sample has been received successfully.<br>
-    <strong>Sample Ref:</strong> ${sample.sampleRefNo}<br>
-    <strong>Date:</strong> ${receivedDate}<br>
-    <strong>Time (Sri Lanka):</strong> ${receivedTime}</p>
 
-    <a 
-      href="https://hay-card-front-ends-nine.vercel.app/sign" 
-      style="
-        display: inline-block;
-        margin-top: 20px;
-        padding: 12px 20px;
-        background: #007bff;
-        color: white !important;
-        text-decoration: none;
-        border-radius: 6px;
-        font-weight: bold;
-      "
-    >
-      View Sample
-    </a>
-  `
-);
+      await sendEmail(
+        "Sample Received!",
+        `<p>The sample <strong>${sample.sampleRefNo}</strong> has been received.</p>`
+      );
 
     }
 
     res.status(200).json(sample);
-  } catch (err) {
-    console.error("Error updating received status:", err);
-    res.status(500).json({ message: "Error updating received status", error: err });
-  }
-};
 
-
- 
-exports.getSampleByIdPublic = async (req, res) => {
-  try {
-    const sample = await Sample.findById(req.params.id);
-    if (!sample) return res.status(404).json({ message: "Sample not found" });
-    res.json(sample);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
-  }
-};
 
-// DELETE sample
-exports.deleteSample = async (req, res) => {
-  try {
-    const sample = await Sample.findByIdAndDelete(req.params.id);
-    if (!sample) return res.status(404).json({ message: "Sample not found" });
-    res.json({ message: "Sample deleted successfully" });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({
+      message: "Error updating received status",
+      error: err,
+    });
+
   }
+
 };
