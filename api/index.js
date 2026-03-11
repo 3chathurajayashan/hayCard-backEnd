@@ -19,26 +19,23 @@ dotenv.config();
  
 const app = express();
 
-// ✅ Correct CORS setup for Vercel
-const allowedOrigins = [
-  "https://hay-card-front-end.vercel.app",
-  "https://vermillion-melomakarona-e947bf.netlify.app",
-  "https://hay-card-front-ends-nine.vercel.app",
-  "http://localhost:5173",
-  "http://localhost:5000",
-];
-
- 
+// ✅ Proper CORS setup
 app.use(cors({
-  origin: "*", // allow all origins or replace with allowedOrigins array
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
+  origin: [
+    "http://localhost:5173",
+    "https://hay-card-front-end.vercel.app"
+  ],
+  methods: ["GET","POST","PUT","DELETE","OPTIONS"],
+  allowedHeaders: ["Content-Type","Authorization"]
 }));
 
-app.use(bodyParser.json());
-
-// Handle preflight requests
-app.options("*", cors());
+// VERY IMPORTANT for Vercel
+app.options("*", (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", req.headers.origin);
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.status(200).end();
+});
  
 app.use(bodyParser.json());
  
