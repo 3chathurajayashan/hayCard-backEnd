@@ -22,13 +22,13 @@ const app = express();
 // ✅ Proper CORS setup
 app.use(cors({
   origin: [
-    "http://localhost:5173",
-    "https://hay-card-front-end.vercel.app"
+    "http://localhost:5173", // dev
+    "https://hay-card-front-ends-nine.vercel.app" // production frontend
   ],
   methods: ["GET","POST","PUT","DELETE","OPTIONS"],
-  allowedHeaders: ["Content-Type","Authorization"]
+  allowedHeaders: ["Content-Type","Authorization"],
+  credentials: true // if you are sending cookies or auth headers
 }));
-
 // VERY IMPORTANT for Vercel
 app.options("*", (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", req.headers.origin);
