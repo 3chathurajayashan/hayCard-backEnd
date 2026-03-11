@@ -7,9 +7,22 @@ import { v4 as uuidv4 } from "uuid"; // add this at the top
 /* =========================================
    CREATE GATE PASS
 ========================================= */
+/* =========================================
+   CREATE GATE PASS (Production-safe)
+========================================= */
 export const createGatePass = async (req, res) => {
   try {
     const data = req.body;
+
+    // Ensure all child samples have unique sampleIds
+    if (data.samples && Array.isArray(data.samples)) {
+      data.samples = data.samples.map(s => ({
+        ...s,
+        sampleId: s.sampleId || uuidv4()
+      }));
+    } else {
+      data.samples = [];
+    }
 
     const newGatePass = new Sample({
       ...data,
@@ -45,10 +58,8 @@ export const createGatePass = async (req, res) => {
 };
 
 /* =========================================
-   ADD CHILD SAMPLE
+   ADD CHILD SAMPLE (Production-safe)
 ========================================= */
- 
-
 export const addSampleToGatePass = async (req, res) => {
   try {
     const { gatePassId } = req.params;
@@ -56,17 +67,20 @@ export const addSampleToGatePass = async (req, res) => {
 
     const gatePass = await Sample.findById(gatePassId);
     if (!gatePass) {
-      return res.status(404).json({
-        success: false,
-        message: "Gate Pass not found",
-      });
+      return res.status(404).json({ success: false, message: "Gate Pass not found" });
     }
 
-    // Generate a unique sampleId if not provided
+    // Generate unique sampleId if not provided
     const newSample = {
       ...sampleData,
       sampleId: sampleData.sampleId || uuidv4(),
     };
+
+    // Prevent duplicate within this gate pass
+    const duplicate = gatePass.samples.find(s => s.sampleId === newSample.sampleId);
+    if (duplicate) {
+      return res.status(400).json({ success: false, message: "Sample ID already exists in this Gate Pass" });
+    }
 
     gatePass.samples.push(newSample);
     await gatePass.save();
@@ -83,10 +97,7 @@ export const addSampleToGatePass = async (req, res) => {
     });
 
   } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message,
-    });
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
