@@ -9,7 +9,7 @@ import {
   updateChildSample,
   deleteChildSample,
   updateReceivedStatus,
-  getPublicSample
+  getPublicGatePass
 } from "../controllers/sampleController.js";
 
 const router = express.Router();
@@ -19,7 +19,7 @@ const router = express.Router();
 ========================================= */
 
 router.post("/", createGatePass);
-router.get("/public/:id", getPublicSample); // MUST be BEFORE /:id
+router.get("/public/:id", getPublicGatePass); // MUST be BEFORE /:id
 router.get("/", getAllGatePasses);
 router.get("/:id", protect, getSingleGatePass);
 router.post("/:gatePassId/sample", protect, addSampleToGatePass);

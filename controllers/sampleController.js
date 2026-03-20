@@ -164,48 +164,26 @@ export const getSingleGatePass = async (req, res) => {
 /* =========================================
    GET PUBLIC SAMPLE (NO AUTH)
 ========================================= */
-export const getPublicSample = async (req, res) => {
+// controllers/sampleController.js
+export const getPublicGatePass = async (req, res) => {
   try {
-    const { id } = req.params; // This is sampleId (UUID)
+    const { id } = req.params; // this is parent gatePass _id
 
-    // Fetch gate pass containing this child sample by sampleId
-    const gatePass = await Sample.findOne({
-      "samples.sampleId": id, // ✅ use sampleId, NOT _id
-    }).populate("createdBy", "name email")
+    const gatePass = await Sample.findById(id)
+      .populate("createdBy", "name email")
       .populate("assignedTo", "name email");
 
     if (!gatePass) {
-      return res.status(404).json({
-        success: false,
-        message: "Sample not found",
-      });
+      return res.status(404).json({ success: false, message: "Gate Pass not found" });
     }
-
-    // Find the specific child sample
-    const sample = gatePass.samples.find(s => s.sampleId === id);
 
     res.status(200).json({
       success: true,
-      gatePass: {
-        _id: gatePass._id,
-        requestRefNo: gatePass.requestRefNo,
-        sampleRefNo: gatePass.sampleRefNo,
-        from: gatePass.from,
-        to: gatePass.to,
-        sampleRoute: gatePass.sampleRoute,
-        remarks: gatePass.remarks,
-        createdBy: gatePass.createdBy,
-        assignedTo: gatePass.assignedTo,
-        createdAt: gatePass.createdAt,
-      },
-      sample,
+      gatePass,
+      samples: gatePass.samples, // all child samples included
     });
-
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
