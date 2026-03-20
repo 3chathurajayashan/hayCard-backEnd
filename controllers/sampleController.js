@@ -166,11 +166,11 @@ export const getSingleGatePass = async (req, res) => {
 ========================================= */
 export const getPublicSample = async (req, res) => {
   try {
-    const { id } = req.params; // this can be Gate Pass ID or sampleId
+    const { id } = req.params; // This is sampleId (UUID)
 
-    // Fetch gate pass containing this child sample
+    // Fetch gate pass containing this child sample by sampleId
     const gatePass = await Sample.findOne({
-      "samples._id": id, // match child sample _id
+      "samples.sampleId": id, // ✅ use sampleId, NOT _id
     }).populate("createdBy", "name email")
       .populate("assignedTo", "name email");
 
@@ -182,7 +182,7 @@ export const getPublicSample = async (req, res) => {
     }
 
     // Find the specific child sample
-    const sample = gatePass.samples.id(id);
+    const sample = gatePass.samples.find(s => s.sampleId === id);
 
     res.status(200).json({
       success: true,
