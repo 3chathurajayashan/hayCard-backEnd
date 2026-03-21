@@ -329,3 +329,38 @@ export const updateReceivedStatus = async (req, res) => {
   }
 
 };
+/* =========================================
+   GET FULL GATE PASS DETAILS BY _ID
+========================================= */
+export const getFullGatePassById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const gatePass = await Sample.findById(id)
+      .populate("createdBy", "name email")
+      .populate("assignedTo", "name email");
+
+    if (!gatePass) {
+      return res.status(404).send("Not found");
+    }
+
+    const isBrowser = req.headers.accept?.includes("text/html");
+
+    // ✅ REDIRECT to frontend UI
+    if (isBrowser) {
+      return res.redirect(`https://hay-card-front-ends-nine.vercel.app/view/${id}`);
+    }
+
+    // ✅ API still works
+    return res.status(200).json({
+      success: true,
+      data: gatePass,
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
