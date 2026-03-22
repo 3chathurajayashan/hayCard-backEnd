@@ -296,14 +296,14 @@ export const updateReceivedStatus = async (req, res) => {
     const receivedTime = now.format("hh:mm:ss A");
 
     const sample = await Sample.findByIdAndUpdate(
-      id,
-      {
-        isReceived: true, // Match frontend property
-        receivedDate,
-        receivedTime,
-      },
-      { new: true }
-    );
+  id,
+  {
+    received: true, // ✅ FIXED
+    receivedDate,
+    receivedTime,
+  },
+  { new: true }
+);
 
     if (!sample) {
         return res.status(404).json({ message: "Gate Pass not found" });
