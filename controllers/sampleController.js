@@ -282,52 +282,49 @@ export const deleteChildSample = async (req, res) => {
   }
 
 };
-
-/* =========================================
-   UPDATE RECEIVED STATUS (OLD SYSTEM)
+ /* =========================================
+   UPDATE RECEIVED STATUS (Corrected)
 ========================================= */
 export const updateReceivedStatus = async (req, res) => {
-
   try {
-
     const { id } = req.params;
-    const { received } = req.body;
+    // We don't even need to send a body, since you said it "cannot be undone"
+    // We just set it to true.
 
     const now = moment().tz("Asia/Colombo");
-
     const receivedDate = now.format("YYYY-MM-DD");
     const receivedTime = now.format("hh:mm:ss A");
 
     const sample = await Sample.findByIdAndUpdate(
       id,
       {
-        received,
-        receivedDate: received ? receivedDate : null,
-        receivedTime: received ? receivedTime : null,
+        isReceived: true, // Match frontend property
+        receivedDate,
+        receivedTime,
       },
       { new: true }
     );
 
-    if (received) {
-
-      await sendEmail(
-        "Sample Received!",
-        `<p>The sample <strong>${sample.sampleRefNo}</strong> has been received.</p>`
-      );
-
+    if (!sample) {
+        return res.status(404).json({ message: "Gate Pass not found" });
     }
 
-    res.status(200).json(sample);
+    await sendEmail(
+      "Sample Received!",
+      `<p>The sample <strong>${sample.sampleRefNo}</strong> has been received at the lab.</p>`
+    );
 
-  } catch (err) {
-
-    res.status(500).json({
-      message: "Error updating received status",
-      error: err,
+    res.status(200).json({
+      success: true,
+      data: sample
     });
 
+  } catch (err) {
+    res.status(500).json({
+      message: "Error updating received status",
+      error: err.message,
+    });
   }
-
 };
 /* =========================================
    GET FULL GATE PASS DETAILS BY _ID
