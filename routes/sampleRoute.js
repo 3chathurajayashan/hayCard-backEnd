@@ -1,6 +1,5 @@
 import express from "express";
 import { protect } from "../middlewares/auth.js";
-
 import {
   createGatePass,
   addSampleToGatePass,
@@ -12,31 +11,29 @@ import {
   getFullGatePassById,
   finalizeGatePass,
   updateAnalysedBy,
-  getAnalysedBy
-
+  getAnalysedBy,
 } from "../controllers/sampleController.js";
 
 const router = express.Router();
 
-/* =========================================
-   GATE PASS ROUTES
-========================================= */
-
+// ── Non-parameterized first ──────────────────────────
 router.post("/", createGatePass);
-router.get("/public/:id", getFullGatePassById); // MUST be BEFORE /:idss
 router.get("/", getAllGatePasses);
-router.get("/:id", protect, getSingleGatePass);
- router.patch("/:id/analysedBy", updateAnalysedBy);
 
-// Get analysedBy field only
-router.get("/:id/analysedBy", getAnalysedBy);
+// ── Specific named sub-routes BEFORE generic /:id ───
+router.get("/public/:id", getFullGatePassById);       // ✅ before /:id
 
-// routes/sampleRoutes.js
+router.put("/:id/analysedBy", updateAnalysedBy);      // ✅ MOVED UP — before /:id
+router.get("/:id/analysedBy", getAnalysedBy);         // ✅ MOVED UP — before /:id
+router.put("/:id/received", protect, updateReceivedStatus);
 router.put("/:id/finalize", protect, finalizeGatePass);
+
+// ── Generic /:id LAST ────────────────────────────────
+router.get("/:id", protect, getSingleGatePass);       // ✅ now safely at the bottom
+
+// ── Child sample routes ──────────────────────────────
 router.post("/:gatePassId/sample", protect, addSampleToGatePass);
 router.put("/:gatePassId/sample/:sampleId", protect, updateChildSample);
 router.delete("/:gatePassId/sample/:sampleId", protect, deleteChildSample);
-router.put("/:id/received", protect, updateReceivedStatus);
-
 
 export default router;
