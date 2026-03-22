@@ -21,7 +21,7 @@ const router = express.Router();
 ========================================= */
 
 router.post("/", createGatePass);
-router.get("/public/:id", getFullGatePassById); // MUST be BEFORE /:id
+router.get("/public/:id", getFullGatePassById); // MUST be BEFORE /:idss
 router.get("/", getAllGatePasses);
 router.get("/:id", protect, getSingleGatePass);
 // routes/sampleRoutes.js
