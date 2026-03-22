@@ -10,7 +10,9 @@ import {
   deleteChildSample,
   updateReceivedStatus,
   getFullGatePassById,
-  finalizeGatePass
+  finalizeGatePass,
+  updateAnalysedBy,
+  getAnalysedBy
 
 } from "../controllers/sampleController.js";
 
@@ -24,6 +26,11 @@ router.post("/", createGatePass);
 router.get("/public/:id", getFullGatePassById); // MUST be BEFORE /:idss
 router.get("/", getAllGatePasses);
 router.get("/:id", protect, getSingleGatePass);
+ router.patch("/:id/analysedBy", updateAnalysedBy);
+
+// Get analysedBy field only
+router.get("/:id/analysedBy", getAnalysedBy);
+
 // routes/sampleRoutes.js
 router.put("/:id/finalize", protect, finalizeGatePass);
 router.post("/:gatePassId/sample", protect, addSampleToGatePass);

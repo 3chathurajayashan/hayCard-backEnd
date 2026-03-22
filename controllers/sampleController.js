@@ -2,19 +2,15 @@ import Sample from "../models/sampleModel.js";
 import User from "../models/userModel.js";
 import { sendEmail } from "../utils/emailService.js";
 import moment from "moment-timezone";
-import { v4 as uuidv4 } from "uuid"; // add this at the top
+import { v4 as uuidv4 } from "uuid";
 
 /* =========================================
    CREATE GATE PASS
-========================================= */
-/* =========================================
-   CREATE GATE PASS (Production-safe)
 ========================================= */
 export const createGatePass = async (req, res) => {
   try {
     const data = req.body;
 
-    // Ensure all child samples have unique sampleIds
     if (data.samples && Array.isArray(data.samples)) {
       data.samples = data.samples.map(s => ({
         ...s,
@@ -31,7 +27,6 @@ export const createGatePass = async (req, res) => {
 
     await newGatePass.save();
 
-    /* EMAIL TO TECHNICIANS */
     const techs = await User.find({ role: "technician" });
     const techEmails = techs.map((t) => t.email);
 
@@ -50,15 +45,12 @@ export const createGatePass = async (req, res) => {
     });
 
   } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message,
-    });
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
 /* =========================================
-   ADD CHILD SAMPLE (Production-safe)
+   ADD CHILD SAMPLE
 ========================================= */
 export const addSampleToGatePass = async (req, res) => {
   try {
@@ -70,13 +62,11 @@ export const addSampleToGatePass = async (req, res) => {
       return res.status(404).json({ success: false, message: "Gate Pass not found" });
     }
 
-    // Generate unique sampleId if not provided
     const newSample = {
       ...sampleData,
       sampleId: sampleData.sampleId || uuidv4(),
     };
 
-    // Prevent duplicate within this gate pass
     const duplicate = gatePass.samples.find(s => s.sampleId === newSample.sampleId);
     if (duplicate) {
       return res.status(400).json({ success: false, message: "Sample ID already exists in this Gate Pass" });
@@ -84,11 +74,6 @@ export const addSampleToGatePass = async (req, res) => {
 
     gatePass.samples.push(newSample);
     await gatePass.save();
-
-    await sendEmail(
-      "Sample Added",
-      `<p>A new child sample <strong>${newSample.sampleId}</strong> was added.</p>`
-    );
 
     res.status(200).json({
       success: true,
@@ -106,7 +91,6 @@ export const addSampleToGatePass = async (req, res) => {
 ========================================= */
 export const getAllGatePasses = async (req, res) => {
   try {
-    // Fetch all samples without any user filtering
     const gatePasses = await Sample.find()
       .populate("createdBy", "name email")
       .populate("assignedTo", "name email")
@@ -119,10 +103,7 @@ export const getAllGatePasses = async (req, res) => {
     });
 
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -130,44 +111,28 @@ export const getAllGatePasses = async (req, res) => {
    GET SINGLE GATE PASS
 ========================================= */
 export const getSingleGatePass = async (req, res) => {
-
   try {
-
     const gatePass = await Sample.findById(req.params.id)
       .populate("createdBy", "name email")
       .populate("assignedTo", "name email");
 
     if (!gatePass) {
-
-      return res.status(404).json({
-        success: false,
-        message: "Gate Pass not found",
-      });
-
+      return res.status(404).json({ success: false, message: "Gate Pass not found" });
     }
 
-    res.status(200).json({
-      success: true,
-      data: gatePass,
-    });
+    res.status(200).json({ success: true, data: gatePass });
 
   } catch (error) {
-
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-
+    res.status(500).json({ success: false, message: error.message });
   }
-
 };
+
 /* =========================================
-   GET PUBLIC SAMPLE (NO AUTH)
+   GET PUBLIC GATE PASS (NO AUTH)
 ========================================= */
-// controllers/sampleController.js
 export const getPublicGatePass = async (req, res) => {
   try {
-    const { id } = req.params; // this is parent gatePass _id
+    const { id } = req.params;
 
     const gatePass = await Sample.findById(id)
       .populate("createdBy", "name email")
@@ -180,7 +145,7 @@ export const getPublicGatePass = async (req, res) => {
     res.status(200).json({
       success: true,
       gatePass,
-      samples: gatePass.samples, // all child samples included
+      samples: gatePass.samples,
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -189,50 +154,32 @@ export const getPublicGatePass = async (req, res) => {
 
 /* =========================================
    UPDATE CHILD SAMPLE
+   — Only updates child sample fields (results, testMethod, etc.)
+   — analysedBy on the parent is handled separately via PATCH /:id/analysedBy
 ========================================= */
 export const updateChildSample = async (req, res) => {
   try {
     const { gatePassId, sampleId } = req.params;
 
     const gatePass = await Sample.findById(gatePassId);
-
     if (!gatePass) {
-      return res.status(404).json({
-        success: false,
-        message: "Gate Pass not found",
-      });
+      return res.status(404).json({ success: false, message: "Gate Pass not found" });
     }
 
-    const sample = gatePass.samples.find(
-      (s) => s.sampleId === sampleId
-    );
-
+    const sample = gatePass.samples.find(s => s.sampleId === sampleId);
     if (!sample) {
-      return res.status(404).json({
-        success: false,
-        message: "Sample not found",
-      });
+      return res.status(404).json({ success: false, message: "Sample not found" });
     }
 
-    // ✅ Only update fields that are actually provided
-    Object.keys(req.body).forEach(key => {
-  if (req.body[key] !== undefined) {
-    sample[key] = req.body[key]; // now includes analysedBy
-  }
-});
-
-    // ✅ Ensure analysedBy persists properly
-    if (req.body.analysedBy === undefined && sample.analysedBy) {
-      // keep existing analysedBy
-      sample.analysedBy = sample.analysedBy;
-    }
+    // Update allowed child-sample fields only
+    const allowedFields = ["results", "testMethod", "unitNumber", "completedDate", "completedTime"];
+    allowedFields.forEach(key => {
+      if (req.body[key] !== undefined) {
+        sample[key] = req.body[key];
+      }
+    });
 
     await gatePass.save();
-
-    await sendEmail(
-      "Sample Updated Notification",
-      `<p>The sample <strong>${sample.sampleId}</strong> has been updated.</p>`
-    );
 
     res.status(200).json({
       success: true,
@@ -241,10 +188,7 @@ export const updateChildSample = async (req, res) => {
     });
 
   } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message,
-    });
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
@@ -252,24 +196,15 @@ export const updateChildSample = async (req, res) => {
    DELETE CHILD SAMPLE
 ========================================= */
 export const deleteChildSample = async (req, res) => {
-
   try {
-
     const { gatePassId, sampleId } = req.params;
 
     const gatePass = await Sample.findById(gatePassId);
-
     if (!gatePass) {
-      return res.status(404).json({
-        success: false,
-        message: "Gate Pass not found",
-      });
+      return res.status(404).json({ success: false, message: "Gate Pass not found" });
     }
 
-    gatePass.samples = gatePass.samples.filter(
-      (s) => s.sampleId !== sampleId
-    );
-
+    gatePass.samples = gatePass.samples.filter(s => s.sampleId !== sampleId);
     await gatePass.save();
 
     res.status(200).json({
@@ -279,40 +214,29 @@ export const deleteChildSample = async (req, res) => {
     });
 
   } catch (error) {
-
-    res.status(400).json({
-      success: false,
-      message: error.message,
-    });
-
+    res.status(400).json({ success: false, message: error.message });
   }
-
 };
- /* =========================================
-   UPDATE RECEIVED STATUS (Corrected)
+
+/* =========================================
+   UPDATE RECEIVED STATUS
 ========================================= */
 export const updateReceivedStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    // We don't even need to send a body, since you said it "cannot be undone"
-    // We just set it to true.
 
     const now = moment().tz("Asia/Colombo");
     const receivedDate = now.format("YYYY-MM-DD");
     const receivedTime = now.format("hh:mm:ss A");
 
     const sample = await Sample.findByIdAndUpdate(
-  id,
-  {
-    received: true, // ✅ FIXED
-    receivedDate,
-    receivedTime,
-  },
-  { new: true }
-);
+      id,
+      { received: true, receivedDate, receivedTime },
+      { new: true }
+    );
 
     if (!sample) {
-        return res.status(404).json({ message: "Gate Pass not found" });
+      return res.status(404).json({ message: "Gate Pass not found" });
     }
 
     await sendEmail(
@@ -320,18 +244,13 @@ export const updateReceivedStatus = async (req, res) => {
       `<p>The sample <strong>${sample.sampleRefNo}</strong> has been received at the lab.</p>`
     );
 
-    res.status(200).json({
-      success: true,
-      data: sample
-    });
+    res.status(200).json({ success: true, data: sample });
 
   } catch (err) {
-    res.status(500).json({
-      message: "Error updating received status",
-      error: err.message,
-    });
+    res.status(500).json({ message: "Error updating received status", error: err.message });
   }
 };
+
 /* =========================================
    GET FULL GATE PASS DETAILS BY _ID
 ========================================= */
@@ -349,25 +268,20 @@ export const getFullGatePassById = async (req, res) => {
 
     const isBrowser = req.headers.accept?.includes("text/html");
 
-    // ✅ REDIRECT to frontend UI
     if (isBrowser) {
       return res.redirect(`https://hay-card-front-ends-nine.vercel.app/view/${id}`);
     }
 
-    // ✅ API still works
-    return res.status(200).json({
-      success: true,
-      data: gatePass,
-    });
+    return res.status(200).json({ success: true, data: gatePass });
 
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
-// controllers/sampleController.js
+
+/* =========================================
+   FINALIZE GATE PASS
+========================================= */
 export const finalizeGatePass = async (req, res) => {
   try {
     const { id } = req.params;
@@ -377,14 +291,12 @@ export const finalizeGatePass = async (req, res) => {
       return res.status(404).json({ success: false, message: "Gate Pass not found" });
     }
 
-    // Prevent double finalize
     if (gatePass.isFinalized) {
       return res.status(400).json({ success: false, message: "Gate Pass is already finalized" });
     }
 
     gatePass.isFinalized = true;
     gatePass.updatedAt = new Date();
-
     await gatePass.save();
 
     await sendEmail(
@@ -399,9 +311,72 @@ export const finalizeGatePass = async (req, res) => {
     });
 
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: err.message,
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+/* =========================================
+   UPDATE ANALYSED BY
+   — Uses findByIdAndUpdate so it BYPASSES the pre-save hook
+     (which does expensive duplicate-sampleId checks we don't need here)
+========================================= */
+export const updateAnalysedBy = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { analysedBy } = req.body;
+
+    if (!analysedBy || analysedBy.trim() === "") {
+      return res.status(400).json({
+        success: false,
+        message: "analysedBy field is required",
+      });
+    }
+
+    // ✅ findByIdAndUpdate directly sets the field in MongoDB — no pre-save hook interference
+    const gatePass = await Sample.findByIdAndUpdate(
+      id,
+      {
+        $set: {
+          analysedBy: analysedBy.trim(),
+          updatedAt: new Date(),
+        },
+      },
+      { new: true, runValidators: false }
+    );
+
+    if (!gatePass) {
+      return res.status(404).json({ success: false, message: "Gate Pass not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "analysedBy updated successfully",
+      data: { id: gatePass._id, analysedBy: gatePass.analysedBy },
     });
+
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+/* =========================================
+   GET ANALYSED BY
+========================================= */
+export const getAnalysedBy = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const gatePass = await Sample.findById(id, "analysedBy");
+    if (!gatePass) {
+      return res.status(404).json({ success: false, message: "Gate Pass not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: { id: gatePass._id, analysedBy: gatePass.analysedBy || "" },
+    });
+
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 };
