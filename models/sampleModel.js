@@ -19,7 +19,7 @@ const childSampleSchema = new Schema(
       of: String,
       default: {},
     },
-    analysedBy: { type: String },
+     
     completedDate: { type: String },
     completedTime: { type: String },
   },
@@ -36,6 +36,7 @@ const sampleSchema = new Schema({
   from: { type: [String], enum: ["HCM", "HCB", "HCM HCB"], required: true },
   remarks: { type: String },
   sampleInTime: { type: String },
+   
   sampleInDate: { type: String },
   gatePassNo: { type: String, required: true },
   sampleReceivedTime: { type: String },
@@ -46,6 +47,7 @@ const sampleSchema = new Schema({
     required: true,
   },
   samples: [childSampleSchema],
+  analysedBy: { type: String, default: "" },
   qrCodeDataUrl: { type: String },
   isFinalized: { type: Boolean, default: false },
   createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },

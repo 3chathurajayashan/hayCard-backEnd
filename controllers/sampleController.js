@@ -191,9 +191,7 @@ export const getPublicGatePass = async (req, res) => {
    UPDATE CHILD SAMPLE
 ========================================= */
 export const updateChildSample = async (req, res) => {
-
   try {
-
     const { gatePassId, sampleId } = req.params;
 
     const gatePass = await Sample.findById(gatePassId);
@@ -216,7 +214,18 @@ export const updateChildSample = async (req, res) => {
       });
     }
 
-    Object.assign(sample, req.body);
+    // ✅ Only update fields that are actually provided
+    Object.keys(req.body).forEach(key => {
+  if (req.body[key] !== undefined) {
+    sample[key] = req.body[key]; // now includes analysedBy
+  }
+});
+
+    // ✅ Ensure analysedBy persists properly
+    if (req.body.analysedBy === undefined && sample.analysedBy) {
+      // keep existing analysedBy
+      sample.analysedBy = sample.analysedBy;
+    }
 
     await gatePass.save();
 
@@ -232,14 +241,11 @@ export const updateChildSample = async (req, res) => {
     });
 
   } catch (error) {
-
     res.status(400).json({
       success: false,
       message: error.message,
     });
-
   }
-
 };
 
 /* =========================================
