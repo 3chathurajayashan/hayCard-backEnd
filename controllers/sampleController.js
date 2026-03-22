@@ -361,3 +361,41 @@ export const getFullGatePassById = async (req, res) => {
     });
   }
 };
+// controllers/sampleController.js
+export const finalizeGatePass = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const gatePass = await Sample.findById(id);
+    if (!gatePass) {
+      return res.status(404).json({ success: false, message: "Gate Pass not found" });
+    }
+
+    // Prevent double finalize
+    if (gatePass.isFinalized) {
+      return res.status(400).json({ success: false, message: "Gate Pass is already finalized" });
+    }
+
+    gatePass.isFinalized = true;
+    gatePass.updatedAt = new Date();
+
+    await gatePass.save();
+
+    await sendEmail(
+      "Gate Pass Finalized",
+      `<p>The Gate Pass <strong>${gatePass.sampleRefNo}</strong> has been finalized. Results are now locked.</p>`
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Gate Pass finalized successfully",
+      data: gatePass,
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};

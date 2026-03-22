@@ -9,7 +9,8 @@ import {
   updateChildSample,
   deleteChildSample,
   updateReceivedStatus,
-  getFullGatePassById
+  getFullGatePassById,
+  finalizeGatePass
 
 } from "../controllers/sampleController.js";
 
@@ -23,6 +24,8 @@ router.post("/", createGatePass);
 router.get("/public/:id", getFullGatePassById); // MUST be BEFORE /:id
 router.get("/", getAllGatePasses);
 router.get("/:id", protect, getSingleGatePass);
+// routes/sampleRoutes.js
+router.put("/:id/finalize", protect, finalizeGatePass);
 router.post("/:gatePassId/sample", protect, addSampleToGatePass);
 router.put("/:gatePassId/sample/:sampleId", protect, updateChildSample);
 router.delete("/:gatePassId/sample/:sampleId", protect, deleteChildSample);
